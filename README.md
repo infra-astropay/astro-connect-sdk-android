@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.0")
+    implementation("com.astropay:connect:1.0.2")
 }
 ```
 
@@ -154,6 +154,9 @@ fun MyScreen() {
                         println("User closed the SDK")
                         showSDK = false
                     }
+                    is AstroResult.Event -> {
+                        println("Event: ${result.event.eventName}")
+                    }
                 }
             }
         )
@@ -185,13 +188,14 @@ AstroConnectView(
 
 ## Handling Results
 
-The SDK returns an `AstroResult` sealed class with three possible states:
+The SDK returns an `AstroResult` sealed class with four possible states:
 
 ```kotlin
 sealed class AstroResult {
     data object Success : AstroResult()           // Operation completed successfully
     data class Failure(val error: AstroError)     // An error occurred
     data object Closed : AstroResult()            // User closed the SDK
+    data class Event(val event: AstroEvent)       // An analytics event was received
 }
 ```
 
@@ -202,6 +206,51 @@ result
     .onSuccess { println("Success!") }
     .onFailure { error -> println("Error: ${error.errorDetail}") }
     .onClosed { println("User closed SDK") }
+    .onEvent { event -> println("Event: ${event.eventName}") }
+```
+
+### Handling Events
+
+The SDK emits analytics events during user interactions. You can capture these events for tracking purposes:
+
+```kotlin
+onResult = { result ->
+    when (result) {
+        is AstroResult.Success -> println("Success")
+        is AstroResult.Failure -> println("Error: ${result.error.errorDetail}")
+        is AstroResult.Closed -> println("Closed")
+        is AstroResult.Event -> {
+            println("Event: ${result.event.eventName} - ${result.event.eventCategory}")
+            // Send to your analytics platform
+        }
+    }
+}
+```
+
+### Event Structure
+
+```kotlin
+data class AstroEvent(
+    val screenName: String,              // Screen where the event occurred
+    val eventName: String,               // Name of the event
+    val eventCategory: String,           // Category: "user_action", "page_view", etc.
+    val eventProperties: Map<String, Any>?,  // Additional event data (optional)
+    val sessionId: String,               // Session identifier
+    val appVersion: String,              // SDK version
+    val platform: String                 // Platform: "android"
+)
+```
+
+### Accessing Event Properties
+
+```kotlin
+is AstroResult.Event -> {
+    // Access a specific property safely
+    val amount = result.event.eventProperties?.get("amount") as? Int
+    if (amount != null) {
+        println("Amount: $amount")
+    }
+}
 ```
 
 ## Error Codes
@@ -243,6 +292,7 @@ error.errorDetail      // Full detail: "[1003-01] No internet connection"
 
 | Subcode | Name | Description |
 |---------|------|-------------|
+| `01`  | `JSON_PARSING_ERROR` | Error parsing data from the SDK |
 | `401` | `UNAUTHORIZED` | Authentication error (invalid or expired token) |
 
 ### Configuration Errors (1002)
