@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.2")
+    implementation("com.astropay:connect:1.0.3")
 }
 ```
 
@@ -85,6 +85,8 @@ val configuration = AstroConfiguration.builder()
     .setLanguage("en")                        // Language code (optional, default: "en")
     .setFlow("home")                          // Specific flow (optional)
     .setFlowParams(mapOf("amount" to 100))    // Flow parameters (optional)
+    .setShowCloseButton(true)                 // Show close button (optional, default: true)
+    .setAutoSize(true)                        // Auto-size view with safe area (optional, default: true)
     .setEmbedded(true)                        // Embedded mode (optional, default: true)
     .setLogSetting(AstroLogSetting(           // Log configuration (optional)
         enabled = true,
@@ -113,6 +115,8 @@ val configuration = AstroConfiguration(
 | `language` | `String` | No | Language code (e.g., `"en"`, `"es"`, `"pt"`) |
 | `flow` | `String?` | No | Flow to execute (e.g., `"home"`, `"activities"`, `"topup"`, `"cards"`) |
 | `flowParams` | `Map<String, Any>?` | No | Additional flow parameters |
+| `showCloseButton` | `Boolean` | No | Show built-in close button in the SDK header (default: `true`) |
+| `autoSize` | `Boolean` | No | Automatically adjust view size with safe area padding (default: `true`) |
 | `embedded` | `Boolean` | No | Embedded mode (default: `true`) |
 | `logSetting` | `AstroLogSetting` | No | Logging configuration |
 

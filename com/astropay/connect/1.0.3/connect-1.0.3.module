@@ -1,0 +1,152 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.astropay",
+    "module": "connect",
+    "version": "1.0.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.10.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "connect-1.0.3.aar",
+          "url": "connect-1.0.3.aar",
+          "size": 102408,
+          "sha512": "9d1b99747818a446611d29c2a3b12a0acd862980ec20fdac31b3d18927647cfc17dae42cd783b187d78272b3cc69ae2441674b100b2b82144b5de4bc391207a6",
+          "sha256": "f2d05976b72d84a93d1bc5a80c7083efe68a295a4e9c6b219908abc5e275ffba",
+          "sha1": "6d725d9afa209ed4d5b8feeecabf477052f2d264",
+          "md5": "6d04508eb0a55fd9878ca9731b47957f"
+        }
+      ]
+    },
+    {
+      "name": "releaseRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.core",
+          "module": "core-ktx",
+          "version": {
+            "requires": "1.13.1"
+          }
+        },
+        {
+          "group": "androidx.appcompat",
+          "module": "appcompat",
+          "version": {
+            "requires": "1.7.1"
+          }
+        },
+        {
+          "group": "com.google.android.material",
+          "module": "material",
+          "version": {
+            "requires": "1.13.0"
+          }
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-ktx",
+          "version": {
+            "requires": "1.8.2"
+          }
+        },
+        {
+          "group": "androidx.compose",
+          "module": "compose-bom",
+          "version": {
+            "requires": "2024.04.01"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          }
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui"
+        },
+        {
+          "group": "androidx.compose.material3",
+          "module": "material3"
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-compose",
+          "version": {
+            "requires": "1.8.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "connect-1.0.3.aar",
+          "url": "connect-1.0.3.aar",
+          "size": 102408,
+          "sha512": "9d1b99747818a446611d29c2a3b12a0acd862980ec20fdac31b3d18927647cfc17dae42cd783b187d78272b3cc69ae2441674b100b2b82144b5de4bc391207a6",
+          "sha256": "f2d05976b72d84a93d1bc5a80c7083efe68a295a4e9c6b219908abc5e275ffba",
+          "sha1": "6d725d9afa209ed4d5b8feeecabf477052f2d264",
+          "md5": "6d04508eb0a55fd9878ca9731b47957f"
+        }
+      ]
+    },
+    {
+      "name": "releaseSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "files": [
+        {
+          "name": "connect-1.0.3-sources.jar",
+          "url": "connect-1.0.3-sources.jar",
+          "size": 44967,
+          "sha512": "f5ade330492a6dad40e9403bbe84a6fa7c5a2b3dc2a24ac106a88e9ccf835e2c71945a698e96d327cf47ef5929397a746282e4ed4d207e09e54c7dab5cc4080d",
+          "sha256": "b33b9192625e1e83e1470d966bfa09683cd79663c816420a83f35764c02b2eeb",
+          "sha1": "dc522f01cb794d49cdc17beef4a2d017ebf647f5",
+          "md5": "e8dbe720f18c7b07330bae1d1e7f5b27"
+        }
+      ]
+    }
+  ]
+}
