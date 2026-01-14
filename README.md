@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.4")
+    implementation("com.astropay:connect:1.0.5")
 }
 ```
 
