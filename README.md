@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.5")
+    implementation("com.astropay:connect:1.0.6")
 }
 ```
 
@@ -67,6 +67,8 @@ Add the following permissions to your `AndroidManifest.xml` if the flow requires
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.INTERNET" />
 ```
+
+> **Important:** The camera permission dialog will display your **app name** (from `android:label` in your `AndroidManifest.xml`) when requesting access. Make sure your app has a proper `android:label` configured so users see a recognizable name instead of the package name.
 
 ### Create Configuration
 
