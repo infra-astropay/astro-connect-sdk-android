@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.6")
+    implementation("com.astropay:connect:1.0.7")
 }
 ```
 
@@ -82,6 +82,10 @@ import com.astropay.connect.core.AstroLogLevel
 val configuration = AstroConfiguration.builder()
     .setEnvironment("sandbox")                // "sandbox", "production"
     .setAppIssuer("your-app-issuer")          // Application identifier (your app name)
+    .setClientId("your-client-id")            // Client identifier (required)
+    .setPartnerUserId("your-partner-user-id") // Partner user identifier (required)
+    .setPhoneCode("51")                       // Phone country code (optional)
+    .setPhoneNumber("123456789")              // Phone number (optional)
     .setAccessToken("your-access-token")      // Authentication token
     .setTheme(AstroTheme.SYSTEM)              // LIGHT, DARK, SYSTEM (optional)
     .setLanguage("en")                        // Language code (optional, default: "en")
@@ -100,6 +104,10 @@ val configuration = AstroConfiguration.builder()
 val configuration = AstroConfiguration(
     environment = "sandbox",
     appIssuer = "your-app-issuer",
+    clientId = "your-client-id",
+    partnerUserId = "your-partner-user-id",
+    phoneCode = "51",
+    phoneNumber = "123456789",
     accessToken = "your-access-token",
     theme = AstroTheme.SYSTEM,
     language = "en"
@@ -112,7 +120,11 @@ val configuration = AstroConfiguration(
 |-----------|------|----------|-------------|
 | `environment` | `String` | Yes | Environment: `"sandbox"`, `"production"` |
 | `appIssuer` | `String` | Yes | Application identifier |
-| `accessToken` | `String` | No* | Authentication token. *Required on first use to initiate session; optional afterwards |
+| `clientId` | `String` | Yes | Client identifier |
+| `partnerUserId` | `String` | Yes | Partner user identifier |
+| `phoneCode` | `String?` | No | Phone country code (e.g., `"51"`, `"54"`) |
+| `phoneNumber` | `String?` | No | Phone number |
+| `accessToken` | `String` | No | Authentication token. |
 | `theme` | `AstroTheme` | No | Visual theme: `LIGHT`, `DARK`, `SYSTEM` |
 | `language` | `String` | No | Language code (e.g., `"en"`, `"es"`, `"pt"`) |
 | `flow` | `String?` | No | Flow to execute (e.g., `"home"`, `"activities"`, `"topup"`, `"cards"`) |
@@ -140,6 +152,8 @@ fun MyScreen() {
         AstroConfiguration.builder()
             .setEnvironment("sandbox")
             .setAppIssuer("your-app-issuer")
+            .setClientId("your-client-id")
+            .setPartnerUserId("your-partner-user-id")
             .setAccessToken("your-access-token")
             .build()
     }
@@ -307,6 +321,8 @@ error.errorDetail      // Full detail: "[1003-01] No internet connection"
 |---------|-------|
 | `"accessToken is required"` | Empty access token |
 | `"appIssuer is required"` | Empty app issuer |
+| `"clientId is required"` | Empty client ID |
+| `"partnerUserId is required"` | Empty partner user ID |
 | `"Environment is not supported"` | Invalid environment |
 
 ## Log Configuration
@@ -322,6 +338,8 @@ val logSetting = AstroLogSetting(
 val configuration = AstroConfiguration.builder()
     .setEnvironment("sandbox")
     .setAppIssuer("your-app-issuer")
+    .setClientId("your-client-id")
+    .setPartnerUserId("your-partner-user-id")
     .setAccessToken("your-access-token")
     .setLogSetting(logSetting)
     .build()
