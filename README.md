@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.9")
+    implementation("com.astropay:connect:1.0.10")
 }
 ```
 
@@ -94,6 +94,7 @@ val configuration = AstroConfiguration.builder()
     .setShowCloseButton(true)                 // Show close button (optional, default: true)
     .setAutoSize(true)                        // Auto-size view with safe area (optional, default: true)
     .setEmbedded(true)                        // Embedded mode (optional, default: true)
+    .setBiometricGracePeriod(120)             // Seconds to skip biometric re-prompt (optional, default: 120)
     .setLogSetting(AstroLogSetting(           // Log configuration (optional)
         enabled = true,
         logLevel = AstroLogLevel.DEBUG
@@ -132,6 +133,7 @@ val configuration = AstroConfiguration(
 | `showCloseButton` | `Boolean` | No | Show built-in close button in the SDK header (default: `true`) |
 | `autoSize` | `Boolean` | No | Automatically adjust view size with safe area padding (default: `true`) |
 | `embedded` | `Boolean` | No | Embedded mode (default: `true`) |
+| `biometricGracePeriod` | `Long?` | No | Seconds to skip biometric re-prompt after a successful auth. Default: `120` (2 min). Range: `0`–`600` (10 min). Set to `0` to always require biometric. |
 | `logSetting` | `AstroLogSetting` | No | Logging configuration |
 
 ## Integration
