@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.10")
+    implementation("com.astropay:connect:1.0.11")
 }
 ```
 
@@ -91,10 +91,20 @@ val configuration = AstroConfiguration.builder()
     .setLanguage("en")                        // Language code (optional, default: "en")
     .setFlow("home")                          // Specific flow (optional)
     .setFlowParams(mapOf("amount" to 100))    // Flow parameters (optional)
-    .setShowCloseButton(true)                 // Show close button (optional, default: true)
-    .setAutoSize(true)                        // Auto-size view with safe area (optional, default: true)
+    .setShowHeader(true)                      // Show header bar with close button (optional, default: true)
+    .setShowHeaderLogo(true)                  // Show co-branded logo in header (optional, default: true)
     .setEmbedded(true)                        // Embedded mode (optional, default: true)
     .setBiometricGracePeriod(120)             // Seconds to skip biometric re-prompt (optional, default: 120)
+    .setStyle(AstroStyle(                     // Custom style settings (optional)
+        backgroundColor = "#FFFFFF",
+        header = AstroHeaderStyle(
+            backgroundColor = "#EFEFEF",
+            borderColor = "#CCCCCC",
+            borderWidth = 1f,
+            paddingHorizontal = 8f,
+            paddingVertical = 8f
+        )
+    ))
     .setLogSetting(AstroLogSetting(           // Log configuration (optional)
         enabled = true,
         logLevel = AstroLogLevel.DEBUG
@@ -130,10 +140,13 @@ val configuration = AstroConfiguration(
 | `language` | `String` | No | Language code (e.g., `"en"`, `"es"`, `"pt"`) |
 | `flow` | `String?` | No | Flow to execute (e.g., `"home"`, `"activities"`, `"topup"`, `"cards"`) |
 | `flowParams` | `Map<String, Any>?` | No | Additional flow parameters |
-| `showCloseButton` | `Boolean` | No | Show built-in close button in the SDK header (default: `true`) |
-| `autoSize` | `Boolean` | No | Automatically adjust view size with safe area padding (default: `true`) |
+| `showHeader` | `Boolean?` | No | Show header bar with close button and co-branded logo (default: `true`) |
+| `showHeaderLogo` | `Boolean?` | No | Show co-branded issuer logo in the header (default: `true`) |
+| `showCloseButton` | `Boolean?` | No | **Deprecated.** Use `showHeader` instead. |
+| `autoSize` | `Boolean?` | No | **Deprecated.** Use `showHeader` instead. |
 | `embedded` | `Boolean` | No | Embedded mode (default: `true`) |
 | `biometricGracePeriod` | `Long?` | No | Seconds to skip biometric re-prompt after a successful auth. Default: `120` (2 min). Range: `0`–`600` (10 min). Set to `0` to always require biometric. |
+| `style` | `AstroStyle?` | No | Custom style settings for background and header (see [Style Customization](#style-customization)) |
 | `logSetting` | `AstroLogSetting` | No | Logging configuration |
 
 ## Integration
@@ -362,6 +375,76 @@ You can filter logs by TAG: `AstroConnect`
 ```bash
 adb logcat -s AstroConnect
 ```
+
+## Style Customization
+
+You can customize the SDK's visual appearance using `AstroStyle`. This allows you to override the default background color and header styling.
+
+### AstroStyle
+
+| Property          | Type                 | Description                                             |
+|-------------------|----------------------|---------------------------------------------------------|
+| `backgroundColor` | `String?`            | Main background color as hex string (e.g., `"#FFFFFF"`) |
+| `header`          | `AstroHeaderStyle?`  | Header style settings                                   |
+
+### AstroHeaderStyle
+
+| Property            | Type      | Default     | Description                                                      |
+|---------------------|-----------|-------------|------------------------------------------------------------------|
+| `backgroundColor`   | `String?` | Theme-based | Header background color as hex string                            |
+| `borderColor`       | `String?` | Theme-based | Header bottom border color as hex string                         |
+| `borderWidth`       | `Float?`  | `2f`        | Header bottom border width in dp. Set to `0f` to hide the border |
+| `paddingHorizontal` | `Float?`  | `8f`        | Horizontal padding inside the header in dp                       |
+| `paddingVertical`   | `Float?`  | `8f`        | Vertical padding inside the header in dp                         |
+
+### Example
+
+```kotlin
+val style = AstroStyle(
+    backgroundColor = "#FFFFFF",
+    header = AstroHeaderStyle(
+        backgroundColor = "#EFEFEF",
+        borderColor = "#CCCCCC",
+        borderWidth = 1f,
+        paddingHorizontal = 8f,
+        paddingVertical = 8f
+    )
+)
+
+val configuration = AstroConfiguration.builder()
+    .setEnvironment("sandbox")
+    .setAppIssuer("your-app-issuer")
+    .setClientId("your-client-id")
+    .setPartnerUserId("your-partner-user-id")
+    .setAccessToken("your-access-token")
+    .setStyle(style)
+    .build()
+```
+
+> **Note:** When `style` is not provided, the SDK uses default colors based on the selected theme (light/dark/system).
+>
+> **Important:** When you override a color via `AstroStyle`, the SDK **stops using the theme-based default** for that property. This means you are responsible for providing the appropriate value for both light and dark modes. For example:
+>
+> ```kotlin
+> val isDark = (context.resources.configuration.uiMode
+>     and android.content.res.Configuration.UI_MODE_NIGHT_MASK)  ==
+>     android.content.res.Configuration.UI_MODE_NIGHT_YES
+>
+> val style = AstroStyle(
+>     backgroundColor = if (isDark) "#041311" else "#FFFFFF",
+>     header = AstroHeaderStyle(
+>         backgroundColor = if (isDark) "#061E1D" else "#EFEFEF"
+>     )
+> )
+> ```
+
+## Co-Branded Header Logo
+
+When `showHeaderLogo` is `true` (the default), the SDK header displays a co-branded logo for the issuer. The logo is fetched automatically based on the `appIssuer` value and the current theme.
+
+- The SDK looks for a logo at: `{baseUrl}/{appIssuer}_{theme}.webp`
+- If the issuer logo is not found, it falls back to the default AstroPay logo
+- Set `showHeaderLogo` to `false` to hide the logo entirely
 
 ## Environments
 
