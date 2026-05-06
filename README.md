@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.11")
+    implementation("com.astropay:connect:1.0.12")
 }
 ```
 
@@ -111,7 +111,7 @@ val configuration = AstroConfiguration.builder()
     ))
     .build()
 
-// Or using data class directly
+// Or using the constructor directly
 val configuration = AstroConfiguration(
     environment = "sandbox",
     appIssuer = "your-app-issuer",
@@ -136,15 +136,15 @@ val configuration = AstroConfiguration(
 | `phoneCode` | `String?` | No | Phone country code (e.g., `"51"`, `"54"`) |
 | `phoneNumber` | `String?` | No | Phone number |
 | `accessToken` | `String` | No | Authentication token. |
-| `theme` | `AstroTheme` | No | Visual theme: `LIGHT`, `DARK`, `SYSTEM` |
-| `language` | `String` | No | Language code (e.g., `"en"`, `"es"`, `"pt"`) |
+| `theme` | `AstroTheme` | No | Visual theme: `LIGHT`, `DARK`, `SYSTEM`. Default: `SYSTEM` |
+| `language` | `String` | No | Language code (e.g., `"en"`, `"es"`, `"pt"`). Default: `"en"` |
 | `flow` | `String?` | No | Flow to execute (e.g., `"home"`, `"activities"`, `"topup"`, `"cards"`) |
 | `flowParams` | `Map<String, Any>?` | No | Additional flow parameters |
 | `showHeader` | `Boolean?` | No | Show header bar with close button and co-branded logo (default: `true`) |
 | `showHeaderLogo` | `Boolean?` | No | Show co-branded issuer logo in the header (default: `true`) |
 | `showCloseButton` | `Boolean?` | No | **Deprecated.** Use `showHeader` instead. |
 | `autoSize` | `Boolean?` | No | **Deprecated.** Use `showHeader` instead. |
-| `embedded` | `Boolean` | No | Embedded mode (default: `true`) |
+| `embedded` | `Boolean` | No | Embedded mode. Default: `true` |
 | `biometricGracePeriod` | `Long?` | No | Seconds to skip biometric re-prompt after a successful auth. Default: `120` (2 min). Range: `0`–`600` (10 min). Set to `0` to always require biometric. |
 | `style` | `AstroStyle?` | No | Custom style settings for background and header (see [Style Customization](#style-customization)) |
 | `logSetting` | `AstroLogSetting` | No | Logging configuration |
@@ -203,23 +203,77 @@ fun MyScreen() {
 }
 ```
 
-### Custom Loading View
+## Performance Optimization
+
+### Pre-Warming (Recommended)
+
+Initializes the SDK in the background as early as possible (e.g. `Application.onCreate` or `MainActivity.onCreate`). This reduces the cold-start delay so the first SDK open feels instant.
+
+If `appIssuer` is provided, the co-branded header logo is also prepared in advance.
 
 ```kotlin
-AstroConnectView(
-    configuration = configuration,
-    loadingContent = {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CircularProgressIndicator()
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Loading...")
-        }
-    },
-    onResult = { result -> /* Handle result */ }
+AstroConnect.preWarm(
+    environment = "sandbox",
+    appIssuer = "your-app-issuer",   // Optional — prepares the header logo in advance
+    onSuccess = { println("SDK ready") },
+    onError = { error -> println("Pre-warm failed: ${error.errorDetail}") }
 )
 ```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `environment` | `String` | Yes | Target environment: `"production"`, `"sandbox"` |
+| `appIssuer` | `String?` | No | If provided, the co-branded header logo is prepared in advance |
+| `logSetting` | `AstroLogSetting?` | No | Logging configuration |
+| `force` | `Boolean` | No | Force re-initialization even if already completed (default: `false`) |
+| `onSuccess` | `(() -> Unit)?` | No | Called when the SDK is ready |
+| `onError` | `((AstroError) -> Unit)?` | No | Called if initialization fails |
+
+### Pre-Loading
+
+Pre-loads the SDK with a specific configuration before presenting it to the user. Call this when the user lands on a screen that will open the SDK shortly. When `AstroConnectView` is composed with the same configuration, it appears instantly with no loading screen.
+
+> **Important:** A pre-load is **single-use** and **configuration-bound**.
+> - Once `AstroConnectView` is composed, the pre-loaded session is consumed. To keep the instant-open behavior the next time the user enters the SDK, call `preload` again after the view leaves composition.
+> - If the configuration passed to `AstroConnectView` differs from the one used in `preload`, the pre-load is discarded and the SDK initializes normally. If the configuration may change after pre-loading, call `preload` again with the updated configuration to restore the fast path.
+
+```kotlin
+AstroConnect.preload(
+    configuration = configuration,
+    onSuccess = { println("SDK ready — will open instantly") },
+    onError = { error -> println("Preload failed: ${error.errorDetail}") }
+)
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `configuration` | `AstroConfiguration` | Yes | The same configuration that will be passed to `AstroConnectView` |
+| `onSuccess` | `(() -> Unit)?` | No | Called when the SDK is ready |
+| `onError` | `((AstroError) -> Unit)?` | No | Called if pre-loading fails |
+
+### Clearing SDK Data
+
+Resets the SDK to a clean state. Also discards any active pre-load. Call this after user logout or when a fresh start is required.
+
+```kotlin
+AstroConnect.clear(
+    environment = "sandbox",
+    onSuccess = { println("SDK data cleared") },
+    onError = { error -> println("Clear failed: ${error.errorDetail}") }
+)
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `environment` | `String` | Yes | Target environment: `"production"`, `"sandbox"` |
+| `onSuccess` | `(() -> Unit)?` | No | Called when the SDK data has been cleared |
+| `onError` | `((AstroError) -> Unit)?` | No | Called if clearing fails unexpectedly |
 
 ## Handling Results
 
@@ -234,20 +288,6 @@ sealed class AstroResult {
 }
 ```
 
-### Using Result Extensions
-
-```kotlin
-result
-    .onSuccess { println("Success!") }
-    .onFailure { error -> println("Error: ${error.errorDetail}") }
-    .onClosed { println("User closed SDK") }
-    .onEvent { event -> println("Event: ${event.eventName}") }
-```
-
-### Handling Events
-
-The SDK emits analytics events during user interactions. You can capture these events for tracking purposes:
-
 ```kotlin
 onResult = { result ->
     when (result) {
@@ -261,6 +301,20 @@ onResult = { result ->
     }
 }
 ```
+
+### Using Result Extensions
+
+```kotlin
+result
+    .onSuccess { println("Success!") }
+    .onFailure { error -> println("Error: ${error.errorDetail}") }
+    .onClosed { println("User closed SDK") }
+    .onEvent { event -> println("Event: ${event.eventName}") }
+```
+
+## Events
+
+The SDK emits analytics events during user interactions via `AstroResult.Event`. Each event exposes the following fields:
 
 ### Event Structure
 
@@ -287,6 +341,7 @@ is AstroResult.Event -> {
     }
 }
 ```
+For the full catalog of events, screen names, and their properties, see [Events Reference](EVENTS.md).
 
 ## Error Codes
 
@@ -334,11 +389,11 @@ error.errorDetail      // Full detail: "[1003-01] No internet connection"
 
 | Message | Cause |
 |---------|-------|
-| `"accessToken is required"` | Empty access token |
 | `"appIssuer is required"` | Empty app issuer |
 | `"clientId is required"` | Empty client ID |
 | `"partnerUserId is required"` | Empty partner user ID |
 | `"Environment is not supported"` | Invalid environment |
+| `"biometricGracePeriod must be between 0 and 600 seconds"` | `biometricGracePeriod` outside the supported range |
 
 ## Log Configuration
 
@@ -347,6 +402,7 @@ Logs are disabled in production for security.
 ```kotlin
 val logSetting = AstroLogSetting(
     enabled = true,
+    verbose = false,                // Verbose mode (optional, default: false)
     logLevel = AstroLogLevel.DEBUG  // ERROR, INFO, DEBUG
 )
 
@@ -446,12 +502,36 @@ When `showHeaderLogo` is `true` (the default), the SDK header displays a co-bran
 - If the issuer logo is not found, it falls back to the default AstroPay logo
 - Set `showHeaderLogo` to `false` to hide the logo entirely
 
+## Custom Loading View
+
+```kotlin
+AstroConnectView(
+    configuration = configuration,
+    loadingContent = {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator()
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Loading...")
+        }
+    },
+    onResult = { result -> /* Handle result */ }
+)
+```
+
 ## Environments
 
 | Environment |
 |-------------|
 | `production` |
 | `sandbox` |
+
+## Resources
+
+- [Changelog](CHANGELOG.md) — Version history and what changed in each release.
+- [Events Reference](EVENTS.md) — All analytics events emitted by the SDK, including screen names, event names, categories, and properties.
+- [Migration Guides](migrations/) — Step-by-step guides for upgrading between versions that include breaking changes.
 
 ## Support
 
