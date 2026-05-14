@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.12")
+    implementation("com.astropay:connect:1.0.13")
 }
 ```
 
@@ -149,6 +149,91 @@ val configuration = AstroConfiguration(
 | `style` | `AstroStyle?` | No | Custom style settings for background and header (see [Style Customization](#style-customization)) |
 | `logSetting` | `AstroLogSetting` | No | Logging configuration |
 
+### Home Banners
+
+When the SDK lands on the home screen (either `setFlow("home")` or when no flow is specified), you can render promotional banners by passing a `banners` list inside `flowParams`. Each banner is a map and supports two types:
+
+- `home-page` — full-screen banner shown once per session before the home loads (e.g. onboarding).
+- `home-header` — compact banner rendered at the top of the home. Multiple `home-header` banners scroll horizontally.
+
+```kotlin
+val configuration = AstroConfiguration.builder()
+    .setEnvironment("sandbox")
+    .setAppIssuer("your-app-issuer")
+    .setClientId("your-client-id")
+    .setPartnerUserId("your-partner-user-id")
+    .setAccessToken("your-access-token")
+    .setFlow("home")
+    .setFlowParams(
+        mapOf(
+            "banners" to listOf(
+                mapOf(
+                    "bannerType" to "home-page",
+                    "bannerTitle" to "Your wallet is ready to use!",
+                    "bannerDescription" to "Top up now and get 5% cashback on your first transaction.",
+                    "bannerActionText" to "Top Up Now",
+                    "bannerDismissText" to "Dismiss",
+                    "bannerDeepLink" to "topup",
+                    "bannerImage" to "banner-home-page-en",
+                    "bannerImageSize" to "30vh",
+                ),
+                mapOf(
+                    "bannerType" to "home-header",
+                    "bannerTitle" to "Your wallet is ready to use!",
+                    "bannerDescription" to "Top up now and get 5% cashback.",
+                    "bannerActionText" to "Top Up Now",
+                    "bannerDeepLink" to "topup",
+                    "bannerImage" to "banner-home-header-en",
+                ),
+            ),
+        ),
+    )
+    .build()
+```
+
+#### Banner Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `bannerType` | `String` | Yes | Banner placement: `"home-page"` or `"home-header"` |
+| `bannerTitle` | `String?` | No | Title text |
+| `bannerDescription` | `String?` | No | Description text |
+| `bannerActionText` | `String?` | No | Primary action button label. If omitted on a `home-header` banner, a chevron is shown instead and the entire banner is clickable |
+| `bannerDismissText` | `String?` | No | Dismiss button label (only used by `home-page`) |
+| `bannerDeepLink` | `String` | Yes | Deep link triggered on action: `"topup"`, `"activities"`, `"cards"`, `"withdrawal"` |
+| `bannerImage` | `String?` | No | Image asset name to render on the banner |
+| `bannerImageSize` | `String?` | No | Image size for `home-page` banners. Accepts a CSS length in `px`, `vh`, or `vw` (e.g. `"200px"`, `"50vh"`, `"40vw"`). Defaults to `30vh` when omitted or invalid |
+
+### Topup Flow Parameters
+
+When the SDK opens in the topup flow (`setFlow("topup")`), you can preset the amount, the currency, and a list of suggested amounts that are rendered as pills below the amount input.
+
+```kotlin
+val configuration = AstroConfiguration.builder()
+    .setEnvironment("sandbox")
+    .setAppIssuer("your-app-issuer")
+    .setClientId("your-client-id")
+    .setPartnerUserId("your-partner-user-id")
+    .setAccessToken("your-access-token")
+    .setFlow("topup")
+    .setFlowParams(
+        mapOf(
+            "amount" to 50,
+            "currency" to "USD",
+            "suggestedAmounts" to listOf(50, 100, 200),
+        ),
+    )
+    .build()
+```
+
+#### Topup Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `amount` | `Double` | No | Pre-fills the amount input |
+| `currency` | `String` | No | Pre-selects the currency (ISO 4217 code, e.g., `"USD"`) |
+| `suggestedAmounts` | `List<Double>` | No | List of positive amounts rendered as clickable pills below the input. Tapping a pill sets the input to that value |
+
 ## Integration
 
 ### Jetpack Compose
@@ -238,12 +323,18 @@ Pre-loads the SDK with a specific configuration before presenting it to the user
 > **Important:** A pre-load is **single-use** and **configuration-bound**.
 > - Once `AstroConnectView` is composed, the pre-loaded session is consumed. To keep the instant-open behavior the next time the user enters the SDK, call `preload` again after the view leaves composition.
 > - If the configuration passed to `AstroConnectView` differs from the one used in `preload`, the pre-load is discarded and the SDK initializes normally. If the configuration may change after pre-loading, call `preload` again with the updated configuration to restore the fast path.
+> - When biometric authentication is required for the user, any prompt is automatically deferred until `AstroConnectView` is displayed, so the user is never prompted before the SDK is on screen.
 
 ```kotlin
 AstroConnect.preload(
     configuration = configuration,
-    onSuccess = { println("SDK ready — will open instantly") },
-    onError = { error -> println("Preload failed: ${error.errorDetail}") }
+    onPreloadEnded = { reason ->
+        when (reason) {
+            is AstroPreloadEndReason.Loaded -> println("SDK ready — will open instantly")
+            is AstroPreloadEndReason.Deferred -> println("Preload deferred — will resume when AstroConnectView is displayed")
+            is AstroPreloadEndReason.Failed -> println("Preload failed: ${reason.error.errorDetail}")
+        }
+    },
 )
 ```
 
@@ -252,8 +343,17 @@ AstroConnect.preload(
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `configuration` | `AstroConfiguration` | Yes | The same configuration that will be passed to `AstroConnectView` |
-| `onSuccess` | `(() -> Unit)?` | No | Called when the SDK is ready |
-| `onError` | `((AstroError) -> Unit)?` | No | Called if pre-loading fails |
+| `onPreloadEnded` | `((AstroPreloadEndReason) -> Unit)?` | No | Called once with the reason the preload phase ended |
+
+#### `AstroPreloadEndReason`
+
+| Case | Meaning |
+|------|---------|
+| `Loaded` | The page finished loading during preload. The next `AstroConnectView` opens instantly. |
+| `Deferred` | The preload ended before the page fully loaded because the SDK deferred a biometric prompt or the integrator displayed `AstroConnectView` before loading finished. The remaining work continues on the live view. |
+| `Failed(error)` | The preload failed (network error, timeout, invalid configuration). |
+
+> The previous `onSuccess` / `onError` overload is deprecated but still works for backward compatibility.
 
 ### Clearing SDK Data
 

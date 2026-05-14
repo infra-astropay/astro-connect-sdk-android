@@ -4,6 +4,25 @@ All notable changes to the AstroConnectSDK for Android will be documented in thi
 
 ---
 
+## [1.0.13]
+
+### Added
+
+- **Pre-load terminal callback**: new `AstroConnect.preload(configuration, onPreloadEnded)` overload that reports `Loaded`, `Deferred`, or `Failed(error)`.
+- `AstroConnect.preload` now has a load timeout — the callback fires with `Failed` instead of hanging if the page never reaches a terminal state.
+- **Home Banners documentation**: documented how to render `home-page` and `home-header` promotional banners via `flowParams.banners`. See [Home Banners](README.md#home-banners) in the README.
+- **Topup flow parameters documentation**: documented `amount`, `currency`, and `suggestedAmounts` for the topup flow. See [Topup Flow Parameters](README.md#topup-flow-parameters) in the README.
+
+### Fixed
+
+- Fixed an unexpected biometric prompt that could appear before the SDK was visible when calling `AstroConnect.preload`. The prompt is now deferred until `AstroConnectView` is displayed.
+
+### Deprecated
+
+- `AstroConnect.preload(configuration, onSuccess, onError)` — use the new `onPreloadEnded` overload. The old callbacks still work. See the [Migration Guide](migrations/v1.0.12-to-v1.0.13.md).
+
+---
+
 ## [1.0.12]
 
 > **Breaking change:** The standalone `AstroConnect(...)` composable has been removed. Use `AstroConnectView(...)` instead. See the [Migration Guide](migrations/v1.0.11-to-v1.0.12.md) for details.
