@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.13")
+    implementation("com.astropay:connect:1.0.14")
 }
 ```
 
@@ -90,7 +90,7 @@ val configuration = AstroConfiguration.builder()
     .setTheme(AstroTheme.SYSTEM)              // LIGHT, DARK, SYSTEM (optional)
     .setLanguage("en")                        // Language code (optional, default: "en")
     .setFlow("home")                          // Specific flow (optional)
-    .setFlowParams(mapOf("amount" to 100))    // Flow parameters (optional)
+    .setFlowParams(mapOf("topup" to mapOf("amount" to 100))) // Flow parameters (optional)
     .setShowHeader(true)                      // Show header bar with close button (optional, default: true)
     .setShowHeaderLogo(true)                  // Show co-branded logo in header (optional, default: true)
     .setEmbedded(true)                        // Embedded mode (optional, default: true)
@@ -142,8 +142,6 @@ val configuration = AstroConfiguration(
 | `flowParams` | `Map<String, Any>?` | No | Additional flow parameters |
 | `showHeader` | `Boolean?` | No | Show header bar with close button and co-branded logo (default: `true`) |
 | `showHeaderLogo` | `Boolean?` | No | Show co-branded issuer logo in the header (default: `true`) |
-| `showCloseButton` | `Boolean?` | No | **Deprecated.** Use `showHeader` instead. |
-| `autoSize` | `Boolean?` | No | **Deprecated.** Use `showHeader` instead. |
 | `embedded` | `Boolean` | No | Embedded mode. Default: `true` |
 | `biometricGracePeriod` | `Long?` | No | Seconds to skip biometric re-prompt after a successful auth. Default: `120` (2 min). Range: `0`–`600` (10 min). Set to `0` to always require biometric. |
 | `style` | `AstroStyle?` | No | Custom style settings for background and header (see [Style Customization](#style-customization)) |
@@ -151,10 +149,12 @@ val configuration = AstroConfiguration(
 
 ### Home Banners
 
-When the SDK lands on the home screen (either `setFlow("home")` or when no flow is specified), you can render promotional banners by passing a `banners` list inside `flowParams`. Each banner is a map and supports two types:
+Banners are cross-cutting: you can pass them via `flowParams.banners` regardless of the active flow. The `bannerType` value determines where each banner is rendered, not the flow that was initialized. Two placements are supported:
 
 - `home-page` — full-screen banner shown once per session before the home loads (e.g. onboarding).
 - `home-header` — compact banner rendered at the top of the home. Multiple `home-header` banners scroll horizontally.
+
+Each banner is a map inside the `banners` list.
 
 ```kotlin
 val configuration = AstroConfiguration.builder()
@@ -204,9 +204,13 @@ val configuration = AstroConfiguration.builder()
 | `bannerImage` | `String?` | No | Image asset name to render on the banner |
 | `bannerImageSize` | `String?` | No | Image size for `home-page` banners. Accepts a CSS length in `px`, `vh`, or `vw` (e.g. `"200px"`, `"50vh"`, `"40vw"`). Defaults to `30vh` when omitted or invalid |
 
-### Topup Flow Parameters
+### Topup Parameters
 
-When the SDK opens in the topup flow (`setFlow("topup")`), you can preset the amount, the currency, and a list of suggested amounts that are rendered as pills below the amount input.
+Topup parameters are cross-cutting: whenever the user lands on the topup amount screen — regardless of the flow that was initialized — you can preset the amount, the currency, and a list of suggested amounts that are rendered as pills below the amount input.
+
+Pass these values under a nested `topup` map inside `flowParams`.
+
+`currency` is required for `amount` and `suggestedAmounts` to take effect: if it is omitted, or does not match the currency shown on the screen, neither is applied.
 
 ```kotlin
 val configuration = AstroConfiguration.builder()
@@ -218,21 +222,44 @@ val configuration = AstroConfiguration.builder()
     .setFlow("topup")
     .setFlowParams(
         mapOf(
-            "amount" to 50,
-            "currency" to "USD",
-            "suggestedAmounts" to listOf(50, 100, 200),
+            "topup" to mapOf(
+                "amount" to 50,
+                "currency" to "USD",
+                "suggestedAmounts" to listOf(50, 100, 200),
+            ),
         ),
     )
     .build()
 ```
 
+For partners that operate multiple currencies, you can supply a per-currency preset map instead of (or alongside) the flat `suggestedAmounts` list. Keys are ISO 4217 codes (case-insensitive — they are normalized to uppercase internally):
+
+```kotlin
+// Per-currency preset map — overrides `suggestedAmounts` when present.
+// Keys are ISO 4217 codes (case-insensitive).
+val flowParams = mapOf(
+    "topup" to mapOf(
+        "suggestedAmountsByCurrency" to mapOf(
+            "USD" to listOf(10, 25, 50, 100),
+            "EUR" to listOf(10, 20, 50, 100),
+            "BRL" to listOf(50, 100, 200, 500)
+        )
+    )
+)
+```
+
+> **Precedence:** When both `suggestedAmounts` and `suggestedAmountsByCurrency` are provided, the per-currency map wins. If the user is on a currency that is not a key in the map, no preset pills are shown — the flat list is NOT consulted as a fallback.
+
+> **Deprecated:** The flat keys `amount`, `currency`, and `suggestedAmounts` placed directly under `flowParams` are still accepted for backward compatibility, but the nested `flowParams.topup` shape is the recommended form. The flat keys will be removed in a future major version.
+
 #### Topup Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `amount` | `Double` | No | Pre-fills the amount input |
-| `currency` | `String` | No | Pre-selects the currency (ISO 4217 code, e.g., `"USD"`) |
-| `suggestedAmounts` | `List<Double>` | No | List of positive amounts rendered as clickable pills below the input. Tapping a pill sets the input to that value |
+| `amount` | `Double` | No | Pre-fills the amount input. Requires `currency` and only applied when it matches the screen currency |
+| `currency` | `String` | No | Target currency (ISO 4217 code, e.g., `"USD"`). Required for `amount` and `suggestedAmounts` to take effect |
+| `suggestedAmounts` | `List<Double>` | No | List of positive amounts rendered as clickable pills below the input. Tapping a pill sets the input to that value. Requires `currency` and only rendered when it matches the screen currency. Ignored entirely when `suggestedAmountsByCurrency` is provided |
+| `suggestedAmountsByCurrency` | `Map<String, List<Double>>` | No | Per-currency preset map. Keys are ISO 4217 codes (case-insensitive). When present, takes precedence over `suggestedAmounts`; if the screen currency is not a key in the map, no preset pills are shown |
 
 ## Integration
 
@@ -271,7 +298,19 @@ fun MyScreen() {
                         showSDK = false
                     }
                     is AstroResult.Closed -> {
-                        println("User closed the SDK")
+                        when (result.code) {
+                            "CLOSED_BY_USER_HEADER_BUTTON", "CLOSED_BY_USER_NAVIGATED_BACK", "CLOSED_BY_SYSTEM_DISMISS" -> {
+                                // User backed out or pressed system back — log a dismissal event to your analytics
+                                println("sdk_dismissed code=${result.code} message=${result.message}")
+                            }
+                            "CLOSED_BY_USER_SIGNED_OUT" -> {
+                                // User signed out from inside the SDK — clear local session state
+                                println("User signed out — clearing local session")
+                            }
+                            else -> {
+                                println("SDK closed: ${result.code} — ${result.message}")
+                            }
+                        }
                         showSDK = false
                     }
                     is AstroResult.Event -> {
@@ -287,6 +326,8 @@ fun MyScreen() {
     }
 }
 ```
+
+> **Custom header?** If your host renders its own header instead of the built-in one, drive the SDK with `AstroConnectController` and set `showHeader = false` so you can wire your own close button to `controller.close(...)`. See [Custom Header](#custom-header) for the full setup.
 
 ## Performance Optimization
 
@@ -381,10 +422,10 @@ The SDK returns an `AstroResult` sealed class with four possible states:
 
 ```kotlin
 sealed class AstroResult {
-    data object Success : AstroResult()           // Operation completed successfully
-    data class Failure(val error: AstroError)     // An error occurred
-    data object Closed : AstroResult()            // User closed the SDK
-    data class Event(val event: AstroEvent)       // An analytics event was received
+    data object Success : AstroResult()                                              // Operation completed successfully
+    data class Failure(val error: AstroError) : AstroResult()                        // An error occurred
+    data class Closed(val code: String, val message: String) : AstroResult()         // User closed the SDK
+    data class Event(val event: AstroEvent) : AstroResult()                          // An analytics event was received
 }
 ```
 
@@ -393,7 +434,7 @@ onResult = { result ->
     when (result) {
         is AstroResult.Success -> println("Success")
         is AstroResult.Failure -> println("Error: ${result.error.errorDetail}")
-        is AstroResult.Closed -> println("Closed")
+        is AstroResult.Closed -> println("Closed: ${result.code} — ${result.message}")
         is AstroResult.Event -> {
             println("Event: ${result.event.eventName} - ${result.event.eventCategory}")
             // Send to your analytics platform
@@ -402,13 +443,35 @@ onResult = { result ->
 }
 ```
 
+### Close payload
+
+The `code` and `message` properties of `AstroResult.Closed` describe why the SDK closed:
+
+- `code: String` — a short machine-readable identifier in `UPPER_SNAKE_CASE`. All codes follow the `CLOSED_BY_*` convention (e.g. `CLOSED_BY_USER_HEADER_BUTTON`, `CLOSED_BY_HOST_APP`) and describe who or what triggered the close. Branch on this value when you need different behavior per close source.
+- `message: String` — a human-readable description, useful for logging.
+
+Both are plain strings. There is no enum or whitelist on the integrator side; the SDK fixes the values it emits and may introduce additional `code` values for in-SDK close paths in future releases without breaking the API. Treat any unrecognized `code` as a generic close.
+
+| code | source | typical message |
+|------|--------|-----------------|
+| `CLOSED_BY_USER_HEADER_BUTTON` | The built-in header close button | `User tapped the close button` |
+| `CLOSED_BY_HOST_APP` | `AstroConnectController.close()` | `Closed by host integrator` |
+| `CLOSED_BY_SYSTEM_DISMISS` | SDK view was dismissed without an explicit close call (system back-press, sheet swipe-down, navigation back-swipe, host removal) | `View was dismissed` |
+| `UNKNOWN` | Fallback when the close payload is missing or malformed | `` (empty string) |
+| `CLOSED_BY_USER_NAVIGATED_BACK` | User backed out at the root of a flow sub-tree | descriptive (e.g., `User backed out of activities`) |
+| `CLOSED_BY_USER_DISMISSED_ERROR` | User dismissed a terminal-error screen | descriptive (e.g., `User dismissed biometric error`) |
+| `CLOSED_BY_USER_CANCELLED_PIN` | User cancelled the PIN re-prompt | `User cancelled PIN re-prompt` |
+| `CLOSED_BY_USER_SIGNED_OUT` | User signed out from inside the SDK | `User signed out` |
+
+The `CLOSED_BY_USER_NAVIGATED_BACK`, `CLOSED_BY_USER_DISMISSED_ERROR`, `CLOSED_BY_USER_CANCELLED_PIN`, and `CLOSED_BY_USER_SIGNED_OUT` entries above are common examples — the list of in-SDK codes is not exhaustive.
+
 ### Using Result Extensions
 
 ```kotlin
 result
     .onSuccess { println("Success!") }
     .onFailure { error -> println("Error: ${error.errorDetail}") }
-    .onClosed { println("User closed SDK") }
+    .onClosed { code, message -> println("User closed SDK: $code — $message") }
     .onEvent { event -> println("Event: ${event.eventName}") }
 ```
 
@@ -601,6 +664,70 @@ When `showHeaderLogo` is `true` (the default), the SDK header displays a co-bran
 - The SDK looks for a logo at: `{baseUrl}/{appIssuer}_{theme}.webp`
 - If the issuer logo is not found, it falls back to the default AstroPay logo
 - Set `showHeaderLogo` to `false` to hide the logo entirely
+
+## Custom Header
+
+If you set `showHeader` to `false` and render your own header (for example, a custom close button or a top app bar), use `AstroConnectController` to dismiss the SDK from your own UI. Calling `controller.close()` funnels into the same close path as the built-in header button and emits `AstroResult.Closed` exactly once.
+
+```kotlin
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import com.astropay.connect.AstroConnectController
+import com.astropay.connect.core.AstroConfiguration
+import com.astropay.connect.core.AstroResult
+import com.astropay.connect.views.AstroConnectView
+
+@Composable
+fun CustomHeaderScreen() {
+    var showSDK by remember { mutableStateOf(false) }
+    val controller = remember { AstroConnectController() }
+
+    val configuration = remember {
+        AstroConfiguration.builder()
+            .setEnvironment("sandbox")
+            .setAppIssuer("your-app-issuer")
+            .setClientId("your-client-id")
+            .setPartnerUserId("your-partner-user-id")
+            .setAccessToken("your-access-token")
+            .setShowHeader(false)
+            .build()
+    }
+
+    if (showSDK) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Your custom header
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("My App", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = { controller.close() }) {
+                    Text("Close")
+                }
+            }
+
+            AstroConnectView(
+                configuration = configuration,
+                controller = controller,
+                onResult = { result ->
+                    if (result is AstroResult.Closed) {
+                        showSDK = false
+                    }
+                },
+            )
+        }
+    } else {
+        Button(onClick = { showSDK = true }) {
+            Text("Open AstroPay")
+        }
+    }
+}
+```
+
+> `controller.close()` is idempotent — subsequent calls after the SDK has already closed are no-ops. The same applies if the SDK closes itself first (for example, when the user completes the flow): a later `controller.close()` will not re-fire `AstroResult.Closed`. `close()` is safe to call from any thread.
 
 ## Custom Loading View
 

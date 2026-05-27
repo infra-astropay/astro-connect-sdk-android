@@ -1,0 +1,174 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.astropay",
+    "module": "connect",
+    "version": "1.0.14",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.10.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.compose.material",
+          "module": "material-icons-core"
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "connect-1.0.14.aar",
+          "url": "connect-1.0.14.aar",
+          "size": 207020,
+          "sha512": "7d1ce0cb46bd444110cdd7de176a01e36a42dfad425a1dcb76ef3c07ddf736d918c85a29dc4a376b919636844e47c3df10c0935f74f15307309becd21c65ee28",
+          "sha256": "2b999ed531bb8d1311533993f391fb484105bdcc9f8be5281be6f2515bca5158",
+          "sha1": "c38fa6a28bc54ecdf5913331e1680a6fe5a44079",
+          "md5": "7699ba256cf87111ea93c5fbb97e6e74"
+        }
+      ]
+    },
+    {
+      "name": "releaseRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.core",
+          "module": "core-ktx",
+          "version": {
+            "requires": "1.13.1"
+          }
+        },
+        {
+          "group": "androidx.appcompat",
+          "module": "appcompat",
+          "version": {
+            "requires": "1.7.1"
+          }
+        },
+        {
+          "group": "com.google.android.material",
+          "module": "material",
+          "version": {
+            "requires": "1.13.0"
+          }
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-ktx",
+          "version": {
+            "requires": "1.8.2"
+          }
+        },
+        {
+          "group": "androidx.biometric",
+          "module": "biometric",
+          "version": {
+            "requires": "1.1.0"
+          }
+        },
+        {
+          "group": "androidx.security",
+          "module": "security-crypto",
+          "version": {
+            "requires": "1.1.0-alpha06"
+          }
+        },
+        {
+          "group": "androidx.compose",
+          "module": "compose-bom",
+          "version": {
+            "requires": "2024.04.01"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          }
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui"
+        },
+        {
+          "group": "androidx.compose.material3",
+          "module": "material3"
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-compose",
+          "version": {
+            "requires": "1.8.0"
+          }
+        },
+        {
+          "group": "androidx.compose.material",
+          "module": "material-icons-core"
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "connect-1.0.14.aar",
+          "url": "connect-1.0.14.aar",
+          "size": 207020,
+          "sha512": "7d1ce0cb46bd444110cdd7de176a01e36a42dfad425a1dcb76ef3c07ddf736d918c85a29dc4a376b919636844e47c3df10c0935f74f15307309becd21c65ee28",
+          "sha256": "2b999ed531bb8d1311533993f391fb484105bdcc9f8be5281be6f2515bca5158",
+          "sha1": "c38fa6a28bc54ecdf5913331e1680a6fe5a44079",
+          "md5": "7699ba256cf87111ea93c5fbb97e6e74"
+        }
+      ]
+    },
+    {
+      "name": "releaseSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "files": [
+        {
+          "name": "connect-1.0.14-sources.jar",
+          "url": "connect-1.0.14-sources.jar",
+          "size": 103193,
+          "sha512": "da4a9950f067aaf13bc27457f088b55615c0d96950db43a0c81e12428d676a8a6f119c830380f7df2eb481819367b8602fdf5da011303e4edff88da04ad4f8f8",
+          "sha256": "e3d44b32c665717f27897cbdddb3b0f04a87d8a720a295fee016b61b83f7079c",
+          "sha1": "d8b160c059e60c0ed0a750ccb3b1c07c090f8637",
+          "md5": "49ad7de9d4b5d50248b5cb872d79eb06"
+        }
+      ]
+    }
+  ]
+}
