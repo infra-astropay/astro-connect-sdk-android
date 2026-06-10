@@ -4,6 +4,18 @@ All notable changes to the AstroConnectSDK for Android will be documented in thi
 
 ---
 
+## [1.0.15]
+
+> **Breaking change:** The color fields on the typed `AstroStyle` API changed from hex `String?` to `@ColorInt Int?`. This affects `AstroStyle.backgroundColor`, `AstroHeaderStyle.backgroundColor`, and `AstroHeaderStyle.borderColor`. Code that passes a hex string (e.g. `AstroStyle(backgroundColor = "#FFFFFF")`) will no longer compile — pass a native color instead, or move the hex value into the `styleOverrides` map. See the [Migration Guide](migrations/v1.0.14-to-v1.0.15.md) for details.
+
+### Added
+
+- **Style customization**: `AstroStyle` now lets you override colors and typography across the SDK, including brand colors, surface/text/border tokens, per-component wrappers (`buttons`, `buttonsIcon`, `buttonsPill`, `inputs`), and a global font family. See [Style Customization](README.md#style-customization) and the [Style Tokens Reference](STYLE-TOKENS.md) for the full catalog.
+  - Color leaves in `styleOverrides` accept both hex strings (6- or 8-digit `#RRGGBB` / `#RRGGBBAA`) and `androidx.compose.ui.graphics.Color` values.
+  - Brand colors and the typed `surface.base` / `surface.highlight` sub-tokens apply throughout the SDK, including the initial loading screen and spinner. See [Brand color aliases](STYLE-TOKENS.md#brand-color-aliases-apply-throughout-the-sdk).
+
+---
+
 ## [1.0.14]
 
 > **Breaking change:** `AstroResult.Closed` changed from a `data object` to a `data class` carrying `code: String` and `message: String`. Any `when (result)` over `AstroResult` must update the `Closed` arm, and `result === AstroResult.Closed` referential checks no longer compile. The `AstroResult.onClosed { }` helper block now receives `(code, message)` as parameters. See the [Migration Guide](migrations/v1.0.13-to-v1.0.14.md) for details.

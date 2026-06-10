@@ -28,7 +28,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.14")
+    implementation("com.astropay:connect:1.0.15")
 }
 ```
 
@@ -96,10 +96,17 @@ val configuration = AstroConfiguration.builder()
     .setEmbedded(true)                        // Embedded mode (optional, default: true)
     .setBiometricGracePeriod(120)             // Seconds to skip biometric re-prompt (optional, default: 120)
     .setStyle(AstroStyle(                     // Custom style settings (optional)
-        backgroundColor = "#FFFFFF",
+        backgroundColor = Color.White.toArgb(),
+        primaryColor = Color(0xFF00DBBF).toArgb(),
+        buttons = AstroButtonStyle(
+            colors = AstroButtonColors(
+                primaryBackground = Color(0xFF00DBBF).toArgb(),
+                primaryText = Color.Black.toArgb(),
+            ),
+        ),
         header = AstroHeaderStyle(
-            backgroundColor = "#EFEFEF",
-            borderColor = "#CCCCCC",
+            backgroundColor = Color(0xFFEFEFEF).toArgb(),
+            borderColor = Color(0xFFCCCCCC).toArgb(),
             borderWidth = 1f,
             paddingHorizontal = 8f,
             paddingVertical = 8f
@@ -145,6 +152,7 @@ val configuration = AstroConfiguration(
 | `embedded` | `Boolean` | No | Embedded mode. Default: `true` |
 | `biometricGracePeriod` | `Long?` | No | Seconds to skip biometric re-prompt after a successful auth. Default: `120` (2 min). Range: `0`–`600` (10 min). Set to `0` to always require biometric. |
 | `style` | `AstroStyle?` | No | Custom style settings for background and header (see [Style Customization](#style-customization)) |
+| `styleOverrides` | `Map<String, Any>?` | No | Free-form hex/color overrides forwarded to the web, mirroring the `AstroStyle` key shape. Escape hatch for tokens not yet in the typed catalog (see [Hex-string escape hatch via `styleOverrides`](#hex-string-escape-hatch-via-styleoverrides)) |
 | `logSetting` | `AstroLogSetting` | No | Logging configuration |
 
 ### Home Banners
@@ -601,17 +609,28 @@ You can customize the SDK's visual appearance using `AstroStyle`. This allows yo
 
 ### AstroStyle
 
-| Property          | Type                 | Description                                             |
-|-------------------|----------------------|---------------------------------------------------------|
-| `backgroundColor` | `String?`            | Main background color as hex string (e.g., `"#FFFFFF"`) |
-| `header`          | `AstroHeaderStyle?`  | Header style settings                                   |
+| Property          | Type                   | Description                                                                                                            |
+|-------------------|------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `backgroundColor` | `@ColorInt Int?`       | Main background color (e.g., `Color.White.toArgb()`). Also cascades to `surface.base` when not overridden.            |
+| `primaryColor`    | `@ColorInt Int?`       | Primary brand color. Cascades to `surface.highlight`, `text.highlight`, and `border.highlight` when those tokens are not overridden. |
+| `surface`         | `AstroSurfaceColors?`  | Background fills for containers, cards, banners and overlays. See [Style Tokens Reference](STYLE-TOKENS.md#astrosurfacecolors).           |
+| `text`            | `AstroTextColors?`     | Foreground colors for typography. See [Style Tokens Reference](STYLE-TOKENS.md#astrotextcolors).                                       |
+| `border`          | `AstroBorderColors?`   | Stroke colors for outlines, dividers, and separators. See [Style Tokens Reference](STYLE-TOKENS.md#astrobordercolors).                   |
+| `typography`      | `AstroTypography?`           | Global typography settings — single field `fontFamily: String?` used as the default font family across the SDK. See [Style Tokens Reference](STYLE-TOKENS.md#astrotypography). |
+| `buttons`         | `AstroButtonStyle?`          | Wrapper around `AstroButtonColors` (12 variants × 11 props) and optional `AstroButtonTypography`. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttonstyle). |
+| `buttonsIcon`     | `AstroButtonIconStyle?`      | Wrapper around `AstroButtonIconColors` (same 12 variants, icon-specific) and optional `AstroButtonIconTypography`. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttoniconstyle). |
+| `buttonsPill`     | `AstroButtonPillStyle?`      | Wrapper around `AstroButtonPillColors` (14 statuses) and optional `AstroButtonPillTypography`. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttonpillstyle). |
+| `inputs`          | `AstroInputStyle?`           | Wrapper around `AstroInputColors` and optional `AstroInputTypography` (input / label / helper / placeholder). See [Style Tokens Reference](STYLE-TOKENS.md#astroinputstyle). |
+| `header`          | `AstroHeaderStyle?`    | Header style settings                                                                                                  |
+
+> All color values are `@ColorInt Int?` — construct them with `Color(0xFF…).toArgb()`, `ContextCompat.getColor(context, R.color.x)`, or any standard Android color literal. Alpha is honored: an `@ColorInt` with an alpha channel below `0xFF` (e.g. `0x80FF0000` for 50%-opacity red) is delivered to the SDK and rendered with transparency. See the [Style Tokens Reference — Color values](STYLE-TOKENS.md#color-values) for details.
 
 ### AstroHeaderStyle
 
-| Property            | Type      | Default     | Description                                                      |
-|---------------------|-----------|-------------|------------------------------------------------------------------|
-| `backgroundColor`   | `String?` | Theme-based | Header background color as hex string                            |
-| `borderColor`       | `String?` | Theme-based | Header bottom border color as hex string                         |
+| Property            | Type             | Default     | Description                                                      |
+|---------------------|------------------|-------------|------------------------------------------------------------------|
+| `backgroundColor`   | `@ColorInt Int?` | Theme-based | Header background color                                          |
+| `borderColor`       | `@ColorInt Int?` | Theme-based | Header bottom border color                                       |
 | `borderWidth`       | `Float?`  | `2f`        | Header bottom border width in dp. Set to `0f` to hide the border |
 | `paddingHorizontal` | `Float?`  | `8f`        | Horizontal padding inside the header in dp                       |
 | `paddingVertical`   | `Float?`  | `8f`        | Vertical padding inside the header in dp                         |
@@ -620,10 +639,21 @@ You can customize the SDK's visual appearance using `AstroStyle`. This allows yo
 
 ```kotlin
 val style = AstroStyle(
-    backgroundColor = "#FFFFFF",
+    backgroundColor = Color.White.toArgb(),
+    primaryColor = Color(0xFF00DBBF).toArgb(),
+    buttons = AstroButtonStyle(
+        colors = AstroButtonColors(
+            primaryBackground = Color(0xFF00DBBF).toArgb(),
+            primaryText = Color.Black.toArgb(),
+        ),
+    ),
+    surface = AstroSurfaceColors(
+        // 50%-opacity black scrim — alpha is honored end-to-end.
+        overlay = Color(0x80000000).toArgb(),
+    ),
     header = AstroHeaderStyle(
-        backgroundColor = "#EFEFEF",
-        borderColor = "#CCCCCC",
+        backgroundColor = Color(0xFFEFEFEF).toArgb(),
+        borderColor = Color(0xFFCCCCCC).toArgb(),
         borderWidth = 1f,
         paddingHorizontal = 8f,
         paddingVertical = 8f
@@ -650,12 +680,32 @@ val configuration = AstroConfiguration.builder()
 >     android.content.res.Configuration.UI_MODE_NIGHT_YES
 >
 > val style = AstroStyle(
->     backgroundColor = if (isDark) "#041311" else "#FFFFFF",
+>     backgroundColor = if (isDark) Color(0xFF041311).toArgb() else Color.White.toArgb(),
 >     header = AstroHeaderStyle(
->         backgroundColor = if (isDark) "#061E1D" else "#EFEFEF"
+>         backgroundColor = if (isDark) Color(0xFF061E1D).toArgb() else Color(0xFFEFEFEF).toArgb()
 >     )
 > )
 > ```
+
+### Hex-string escape hatch via `styleOverrides`
+
+For partners who need to pass colors as hex strings — for example, theme values fetched from a remote configuration service, or tokens not yet exposed by the typed `AstroStyle` catalog — use `AstroConfiguration.Builder.setStyleOverrides(...)`. Its color leaves accept both hex strings (`"#RRGGBB"` / `"#RRGGBBAA"`) and native `androidx.compose.ui.graphics.Color` values interchangeably. See [Free-form overrides via `styleOverrides`](STYLE-TOKENS.md#free-form-overrides-via-styleoverrides) for the full contract.
+
+```kotlin
+val configuration = AstroConfiguration.builder()
+    .setEnvironment("sandbox")
+    .setAppIssuer("your-app-issuer")
+    .setClientId("your-client-id")
+    .setPartnerUserId("your-partner-user-id")
+    .setAccessToken("your-access-token")
+    .setStyleOverrides(
+        mapOf(
+            "backgroundColor" to "#FFFFFF",
+            "primaryColor" to "#00DBBF",
+        )
+    )
+    .build()
+```
 
 ## Co-Branded Header Logo
 
@@ -758,6 +808,7 @@ AstroConnectView(
 
 - [Changelog](CHANGELOG.md) — Version history and what changed in each release.
 - [Events Reference](EVENTS.md) — All analytics events emitted by the SDK, including screen names, event names, categories, and properties.
+- [Style Tokens Reference](STYLE-TOKENS.md) — Full catalog of design tokens accepted by `AstroStyle` (surface, text, border, buttons), plus cascade rules.
 - [Migration Guides](migrations/) — Step-by-step guides for upgrading between versions that include breaking changes.
 
 ## Support

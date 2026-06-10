@@ -105,6 +105,17 @@ Reference document for all events dispatched through Astro Connect SDK.
 | `biometric_validation_error` | Biometric validation error screen |
 | `kyc_validation` | KYC validation screen |
 
+### My Account
+
+| Screen Name | Description |
+|-------------|-------------|
+| `my_account_face_match_intro` | Face match introduction/start screen (my-account pending task) |
+| `my_account_face_match_onfido` | Face match via Onfido provider (my-account) |
+| `my_account_face_match_incode` | Face match via Incode provider (my-account) |
+| `my_account_face_match_processing` | Face match processing/waiting screen (my-account) |
+| `my_account_face_match_rejected` | Face match was rejected (my-account) |
+| `my_account_face_match_error` | Face match encountered an error (my-account) |
+
 ### Errors
 
 | Screen Name | Description |
@@ -358,6 +369,17 @@ Reference document for all events dispatched through Astro Connect SDK.
 | `pin_recovery_face_match_rejected_start` | `page_view` | Face match rejected screen became visible. `eventProperties: { provider, attempts }` | — |
 | `pin_recovery_face_match_error_start` | `page_view` | Face match error screen became visible. `eventProperties: { provider, errorMessage, attempts }` | — |
 | `pin_recovery_face_match_setup_trusted_device_start` | `page_view` | Trusted device setup screen became visible after face match | — |
+
+### My Account — Face Match
+
+| Event Name | Category | Description | Added |
+|------------|----------|-------------|-------|
+| `my_account_face_match_start` | `page_view` | Face match intro screen became visible (my-account pending task) | 2026-05-27 |
+| `my_account_face_match_onfido_start` | `page_view` | Face match Onfido provider screen became visible | 2026-05-27 |
+| `my_account_face_match_incode_start` | `page_view` | Face match Incode provider screen became visible | 2026-05-27 |
+| `my_account_face_match_processing_start` | `page_view` | Face match processing/waiting screen became visible. `eventProperties: { provider }` | 2026-05-27 |
+| `my_account_face_match_rejected_start` | `page_view` | Face match rejected screen became visible. `eventProperties: { provider, attempts }` | 2026-05-27 |
+| `my_account_face_match_error_start` | `page_view` | Face match error screen became visible. `eventProperties: { provider, errorMessage, attempts }` | 2026-05-27 |
 
 ### Biometric Validation
 
