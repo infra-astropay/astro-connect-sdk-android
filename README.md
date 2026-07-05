@@ -2,15 +2,34 @@
 
 SDK for integrating AstroPay Connect into Android applications.
 
+The SDK ships in **two flavors**: a **core** artifact (`com.astropay:connect`) for most integrations, and a **native KYC** artifact (`com.astropay:connect-native-kyc`) that adds on-device identity verification for regulated markets. Both expose the identical public API — see [Choosing an artifact](#choosing-an-artifact-core-vs-native-kyc) to pick one.
+
 ## Requirements
 
 - Android SDK 24+ (Android 7.0)
 - Kotlin 1.9+
 - Jetpack Compose
 
+> **Note:** The native KYC flow (available with the `com.astropay:connect-native-kyc` artifact) requires Android 8.0 (API 26) or higher. Devices running Android 7.x (API 24–25) will receive an error result from the KYC flow; all other SDK features remain fully functional.
+
 ## Installation
 
-### Option 1: Maven Repository (Recommended)
+### Choosing an artifact: core vs. native KYC
+
+The SDK ships **two artifacts** at the same version — the same integration code, but different bundled capabilities. Pick the one that matches your flows:
+
+| Artifact | Use when | On-device identity verification | Extra Maven repository |
+|----------|----------|---------------------------------|------------------------|
+| `com.astropay:connect` (core) | The standard artifact for most integrations. Identity verification, when the server requests it, runs through the standard in-app browser flow. | Not included | None |
+| `com.astropay:connect-native-kyc` (native KYC) | You operate in a regulated market (e.g. Brazil) that requires **on-device identity verification** — face liveness and document capture handled natively in your app rather than in the in-app browser. | Included | Requires the CAF repository (see below) |
+
+**Not sure which to pick?** Use the core **`com.astropay:connect`** artifact — most integrations don't need native KYC, and switching to `com.astropay:connect-native-kyc` later requires **no code changes** (see [Switching between core and native KYC](#switching-between-core-and-native-kyc)).
+
+Both artifacts expose the identical public API — only the bundled native KYC capability and the required Maven repositories differ. If you integrate `com.astropay:connect` and a native KYC flow is requested, it returns an error result instead of running, and every other feature works normally.
+
+### Maven Repository
+
+#### Core artifact (no native KYC)
 
 Add the AstroPay Maven repository to your project's `settings.gradle.kts`:
 
@@ -28,34 +47,51 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.15")
+    implementation("com.astropay:connect:1.0.16-alpha.1")
 }
 ```
 
-### Option 2: Manual Integration - Using AAR
+#### Native KYC artifact
 
-To integrate AstroConnectSDK manually into your Android project:
+The `connect-native-kyc` artifact additionally requires the CAF Maven repository. Add **both** repositories to your project's `settings.gradle.kts`:
 
-1. Copy `astro-connect-sdk-{VERSION}.aar` (e.g., `astro-connect-sdk-1.0.0.aar`) to your app's `libs/` folder
-2. Add the following to your app's `build.gradle.kts`:
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://repo.combateafraude.com/android/release") }
+        maven { url = uri("https://infra-astropay.github.io/astro-connect-sdk-android/") }
+    }
+}
+```
+
+Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation(files("libs/astro-connect-sdk-{VERSION}.aar"))
-
-    // Required dependencies
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.activity:activity-ktx:1.8.2")
-
-    // Compose
-    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation("com.astropay:connect-native-kyc:1.0.16-alpha.1")
 }
 ```
+
+> You don't declare any CAF dependency yourself — the CAF identity-verification libraries are pulled in transitively by `com.astropay:connect-native-kyc`. You only add the CAF Maven repository above so Gradle can resolve them.
+
+> Use **either** `connect` **or** `connect-native-kyc`, not both. The CAF repository (`https://repo.combateafraude.com/android/release`) is only needed by `connect-native-kyc`; the core `connect` artifact resolves with the AstroPay repository alone.
+
+### Switching between core and native KYC
+
+Both artifacts expose an identical public API, so moving from `com.astropay:connect` to `com.astropay:connect-native-kyc` (or back) needs **no code changes**. To switch:
+
+1. Change the dependency in your app's `build.gradle.kts` to `com.astropay:connect-native-kyc:<version>` (use the same version you had).
+2. Add the CAF Maven repository to your `settings.gradle.kts` (see [Native KYC artifact](#native-kyc-artifact)):
+   ```kotlin
+   maven { url = uri("https://repo.combateafraude.com/android/release") }
+   ```
+3. No manifest changes are required — the `RECORD_AUDIO` permission used by the face liveness module merges into your app automatically.
+
+> The native KYC flow requires Android 8.0 (API 26) or higher. On API 24–25 the KYC flow returns an error result; every other SDK feature keeps working.
+
+To go back to core, reverse the steps: switch the dependency to `com.astropay:connect` and remove the CAF Maven repository from `settings.gradle.kts`.
 
 ## Configuration
 
@@ -69,6 +105,18 @@ Add the following permissions to your `AndroidManifest.xml` if the flow requires
 ```
 
 > **Important:** The camera permission dialog will display your **app name** (from `android:label` in your `AndroidManifest.xml`) when requesting access. Make sure your app has a proper `android:label` configured so users see a recognizable name instead of the package name.
+
+#### Native KYC — Additional Permission
+
+> This applies only when you integrate the **`com.astropay:connect-native-kyc`** artifact. The core **`com.astropay:connect`** artifact does not run the native KYC flow and does not require microphone access.
+
+If your integration uses the native KYC flow, the SDK also requires microphone access for the face liveness module. This permission is declared in the SDK's manifest and merges into your app automatically:
+
+```xml
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+```
+
+The SDK will request this permission at runtime alongside the camera permission when the KYC flow is triggered. No additional manifest changes are required in your app.
 
 ### Create Configuration
 
@@ -706,6 +754,8 @@ val configuration = AstroConfiguration.builder()
     )
     .build()
 ```
+
+> **Native KYC:** The native identity verification flow (available with the **`com.astropay:connect-native-kyc`** artifact) also honors your `AstroConfiguration`. Your `style` / `styleOverrides` colors theme its screens — background, primary/brand color, on-screen text, and borders all follow your configured palette — and `theme` (`LIGHT` / `DARK` / `SYSTEM`) sets light or dark mode. The native KYC screens render in the **device language**, not the SDK's `language` config — unlike the web flow, where `language` applies. An integration that sets no colors is unchanged.
 
 ## Co-Branded Header Logo
 

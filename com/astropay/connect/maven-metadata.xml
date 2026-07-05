@@ -3,7 +3,7 @@
   <groupId>com.astropay</groupId>
   <artifactId>connect</artifactId>
   <versioning>
-    <latest>1.0.15</latest>
+    <latest>1.0.16-alpha.1</latest>
     <release>1.0.15</release>
     <versions>
       <version>1.0.0</version>
@@ -21,7 +21,8 @@
       <version>1.0.13</version>
       <version>1.0.14</version>
       <version>1.0.15</version>
+      <version>1.0.16-alpha.1</version>
     </versions>
-    <lastUpdated>20260610182013</lastUpdated>
+    <lastUpdated>20260705172821</lastUpdated>
   </versioning>
 </metadata>

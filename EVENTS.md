@@ -393,6 +393,13 @@ Reference document for all events dispatched through Astro Connect SDK.
 | Event Name | Category | Description | Added |
 |------------|----------|-------------|-------|
 | `kyc_validation_start` | `page_view` | KYC validation screen became visible | — |
+| `kyc_caf_native_start` | `page_view` | Native KYC flow started | 2026-06-17 |
+| `kyc_caf_native_result` | `user_action` | Native KYC flow completed with a result | 2026-06-17 |
+| `kyc_caf_native_loading` | `page_view` | Native identity-verification engine began initializing (fires once at the start of the native KYC flow) | 2026-07-02 |
+| `kyc_caf_native_document_captured` | `page_view` | Native KYC flow produced a document result. `eventProperties: { module: "documentDetector" }` | 2026-07-02 |
+| `kyc_caf_native_liveness_captured` | `page_view` | Native KYC flow produced a liveness result. `eventProperties: { module: "faceLiveness" }` | 2026-07-02 |
+
+> **Note:** `kyc_caf_native_loading`, `kyc_caf_native_document_captured`, and `kyc_caf_native_liveness_captured` are emitted by the native SDK itself rather than by the in-app web layer. As a result, their `sessionId` is empty and their `appVersion` reflects the native SDK version instead of the web bundle version. All three carry `screenName: kyc_validation`.
 
 ### Errors & Support
 

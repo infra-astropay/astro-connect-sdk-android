@@ -4,6 +4,16 @@ All notable changes to the AstroConnectSDK for Android will be documented in thi
 
 ---
 
+## [1.0.16]
+
+### Added
+
+- **Native KYC** (`com.astropay:connect-native-kyc` artifact): the SDK now runs the identity verification flow natively on the device when the server enables it, instead of falling back to an in-app browser session. Native KYC ships in the new `com.astropay:connect-native-kyc` artifact; the core `com.astropay:connect` artifact is unchanged for everyone else and includes no identity-verification dependency, so it needs no extra Maven repository. The native flow honors your configured `style` / `styleOverrides`, `theme`, and `language`. Choose the artifact that matches your flows — see [Installation](README.md#installation).
+- When using `com.astropay:connect-native-kyc`, the SDK's manifest declares `android.permission.RECORD_AUDIO`. This permission merges into your app automatically and is required by the face liveness module. The SDK requests it at runtime alongside the camera permission when the KYC flow is triggered — no changes to your `AndroidManifest.xml` are needed. The core `com.astropay:connect` artifact does not declare this permission.
+- **Native KYC progress events**: the native identity verification flow now reports its progress on the SDK's event callback (`AstroResult.Event`), emitting a loading event when the flow starts and further events when a document result and a liveness result are produced. Purely additive — no action required.
+
+---
+
 ## [1.0.15]
 
 > **Breaking change:** The color fields on the typed `AstroStyle` API changed from hex `String?` to `@ColorInt Int?`. This affects `AstroStyle.backgroundColor`, `AstroHeaderStyle.backgroundColor`, and `AstroHeaderStyle.borderColor`. Code that passes a hex string (e.g. `AstroStyle(backgroundColor = "#FFFFFF")`) will no longer compile — pass a native color instead, or move the hex value into the `styleOverrides` map. See the [Migration Guide](migrations/v1.0.14-to-v1.0.15.md) for details.
