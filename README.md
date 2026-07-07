@@ -47,7 +47,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.16-alpha.1")
+    implementation("com.astropay:connect:1.0.16")
 }
 ```
 
@@ -70,7 +70,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect-native-kyc:1.0.16-alpha.1")
+    implementation("com.astropay:connect-native-kyc:1.0.16")
 }
 ```
 
