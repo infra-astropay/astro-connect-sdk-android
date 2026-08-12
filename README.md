@@ -47,7 +47,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.16")
+    implementation("com.astropay:connect:1.0.17")
 }
 ```
 
@@ -70,7 +70,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect-native-kyc:1.0.16")
+    implementation("com.astropay:connect-native-kyc:1.0.17")
 }
 ```
 
@@ -203,14 +203,24 @@ val configuration = AstroConfiguration(
 | `styleOverrides` | `Map<String, Any>?` | No | Free-form hex/color overrides forwarded to the web, mirroring the `AstroStyle` key shape. Escape hatch for tokens not yet in the typed catalog (see [Hex-string escape hatch via `styleOverrides`](#hex-string-escape-hatch-via-styleoverrides)) |
 | `logSetting` | `AstroLogSetting` | No | Logging configuration |
 
-### Home Banners
+<a id="home-banners"></a>
 
-Banners are cross-cutting: you can pass them via `flowParams.banners` regardless of the active flow. The `bannerType` value determines where each banner is rendered, not the flow that was initialized. Two placements are supported:
+### Banners
+
+Banners are cross-cutting: you can pass them via `flowParams.banners` regardless of the active flow. The `bannerType` value determines where each banner is rendered, not the flow that was initialized. Four placements are supported:
 
 - `home-page` — full-screen banner shown once per session before the home loads (e.g. onboarding).
-- `home-header` — compact banner rendered at the top of the home. Multiple `home-header` banners scroll horizontally.
+- `home-header` — compact banner rendered at the top of the home.
+- `topup-select-method` — compact banner rendered on the payment method selection screen of the add-money flow.
+- `topup-select-currency` — compact banner rendered on the currency selection screen of the add-money flow. That screen is skipped for users who hold a single wallet, so a banner here is only seen by users with more than one currency.
+
+`home-header`, `topup-select-method`, and `topup-select-currency` all use the same horizontal strip layout: you can place several banners on the same surface, they scroll horizontally, and each one can be dismissed independently. `home-page` is the only full-screen placement.
+
+All banner fields below apply to every placement — to use a new surface, send the same banner payload with a different `bannerType`.
 
 Each banner is a map inside the `banners` list.
+
+By default a banner's action navigates to a destination inside the SDK. Set `bannerLinkTarget` to `"external"` to send the user outside instead — to a website or to one of your own app's screens. See [Banner Link Target](#banner-link-target).
 
 ```kotlin
 val configuration = AstroConfiguration.builder()
@@ -241,6 +251,25 @@ val configuration = AstroConfiguration.builder()
                     "bannerDeepLink" to "topup",
                     "bannerImage" to "banner-home-header-en",
                 ),
+                mapOf(
+                    "bannerType" to "home-header",
+                    "bannerTitle" to "See our latest promotions",
+                    "bannerDescription" to "Open the promotions page on our site.",
+                    "bannerActionText" to "View",
+                    "bannerDeepLink" to "https://example.com/promotions",
+                    "bannerLinkTarget" to "external",
+                    "bannerImage" to "banner-home-header-promos-en",
+                ),
+                mapOf(
+                    "bannerType" to "topup-select-method",
+                    "bannerTitle" to "Pay with card and save",
+                    "bannerDescription" to "No fees on card top-ups this month.",
+                    "bannerActionText" to "Learn more",
+                    "bannerDeepLink" to "https://example.com/promotions",
+                    "bannerLinkTarget" to "external",
+                    "bannerDismissible" to true,
+                    "bannerImage" to "banner-topup-method-en",
+                ),
             ),
         ),
     )
@@ -251,14 +280,62 @@ val configuration = AstroConfiguration.builder()
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `bannerType` | `String` | Yes | Banner placement: `"home-page"` or `"home-header"` |
+| `bannerType` | `String` | Yes | Banner placement: `"home-page"`, `"home-header"`, `"topup-select-method"` or `"topup-select-currency"` |
 | `bannerTitle` | `String?` | No | Title text |
 | `bannerDescription` | `String?` | No | Description text |
-| `bannerActionText` | `String?` | No | Primary action button label. If omitted on a `home-header` banner, a chevron is shown instead and the entire banner is clickable |
+| `bannerActionText` | `String?` | No | Primary action button label. If omitted on a strip banner (`home-header`, `topup-select-method`, `topup-select-currency`), a chevron is shown instead and the entire banner is clickable |
 | `bannerDismissText` | `String?` | No | Dismiss button label (only used by `home-page`) |
-| `bannerDeepLink` | `String` | Yes | Deep link triggered on action: `"topup"`, `"activities"`, `"cards"`, `"withdrawal"` |
+| `bannerDeepLink` | `String` | Yes | Destination opened on action. With the default `bannerLinkTarget`, one of `"topup"`, `"activities"`, `"cards"`, `"withdrawal"`. With `bannerLinkTarget: "external"`, a full link — see [Banner Link Target](#banner-link-target) |
+| `bannerLinkTarget` | `String?` | No | Where `bannerDeepLink` opens: `"internal"` (default) or `"external"`. See [Banner Link Target](#banner-link-target) |
+| `bannerDismissible` | `Boolean?` | No | Shows a close button on a strip banner (`home-header`, `topup-select-method`, `topup-select-currency`). Independent of the banner's action — a banner can be actionable and dismissible at the same time. See [Dismissing a strip banner](#dismissing-a-strip-banner) |
 | `bannerImage` | `String?` | No | Image asset name to render on the banner |
 | `bannerImageSize` | `String?` | No | Image size for `home-page` banners. Accepts a CSS length in `px`, `vh`, or `vw` (e.g. `"200px"`, `"50vh"`, `"40vw"`). Defaults to `30vh` when omitted or invalid |
+
+#### Banner Link Target
+
+`bannerLinkTarget` controls whether the banner action stays inside the SDK or leaves it.
+
+| Value | Behavior | `bannerDeepLink` format |
+|-------|----------|-------------------------|
+| `"internal"` (default) | Navigates to a destination inside the SDK | One of `"topup"`, `"activities"`, `"cards"`, `"withdrawal"` |
+| `"external"` | Leaves the SDK and hands the link to the system | A full link, either an `https://` URL or a custom scheme |
+
+When `bannerLinkTarget` is `"external"`, the format of `bannerDeepLink` decides what opens — you do not need to declare it separately:
+
+- `"https://example.com/promotions"` opens in the device browser.
+- `"yourapp://promotions"` opens the matching screen in your own app.
+
+Only pass links the device can resolve. A custom scheme with no app installed to handle it cannot be opened. Any value of `bannerLinkTarget` other than `"external"` is treated as `"internal"`.
+
+Omitting `bannerLinkTarget` keeps the previous behavior, so existing banner payloads need no changes.
+
+<a id="dismissing-a-header-banner"></a>
+
+#### Dismissing a strip banner
+
+`bannerDismissible` adds a close button to a strip banner (`home-header`, `topup-select-method` or `topup-select-currency`), letting the user hide it for the rest of the session. It is independent of the banner's action, so all four combinations are valid:
+
+| `bannerDeepLink` | `bannerDismissible` | Result |
+|---|---|---|
+| A destination | `true` | Banner is tappable **and** shows a close button |
+| A destination | omitted | Banner is tappable, no close button |
+| `"none"` | omitted | Close button only — the banner is not tappable |
+| `"none"` | `false` | Neither: the banner just displays its content |
+
+```kotlin
+mapOf(
+    "bannerType" to "home-header",
+    "bannerTitle" to "See our latest promotions",
+    "bannerActionText" to "View",
+    "bannerDeepLink" to "https://example.com/promotions",
+    "bannerLinkTarget" to "external",
+    "bannerDismissible" to true,
+)
+```
+
+When omitted, `bannerDismissible` keeps the previous behavior: a banner with `bannerDeepLink` set to `"none"` is dismissible, and any other banner is not. Existing payloads need no changes.
+
+A dismissal lasts for the current session and is remembered per banner, identified by its title, description, and image. Banners sharing the same surface are dismissed independently — closing one leaves the others in place.
 
 ### Topup Parameters
 
@@ -316,6 +393,96 @@ val flowParams = mapOf(
 | `currency` | `String` | No | Target currency (ISO 4217 code, e.g., `"USD"`). Required for `amount` and `suggestedAmounts` to take effect |
 | `suggestedAmounts` | `List<Double>` | No | List of positive amounts rendered as clickable pills below the input. Tapping a pill sets the input to that value. Requires `currency` and only rendered when it matches the screen currency. Ignored entirely when `suggestedAmountsByCurrency` is provided |
 | `suggestedAmountsByCurrency` | `Map<String, List<Double>>` | No | Per-currency preset map. Keys are ISO 4217 codes (case-insensitive). When present, takes precedence over `suggestedAmounts`; if the screen currency is not a key in the map, no preset pills are shown |
+
+### Onboarding Prefill
+
+Onboarding prefill lets you fill in some of the onboarding form fields with values you already
+hold for the user — for example the email address and personal data collected when they signed up
+in your app. Prefilled values are editable: the user still reviews and confirms the form before
+submitting it.
+
+Pass these values under a nested `onboarding` map inside `flowParams`. **No SDK update is
+required** — the values travel inside the existing `flowParams`, so this works on any installed SDK
+version.
+
+```kotlin
+val configuration = AstroConfiguration.builder()
+    .setEnvironment("sandbox")
+    .setAppIssuer("your-app-issuer")
+    .setClientId("your-client-id")
+    .setPartnerUserId("your-partner-user-id")
+    .setAccessToken("your-access-token")
+    .setFlowParams(
+        mapOf(
+            "onboarding" to mapOf(
+                "stepEmail" to mapOf(
+                    "email" to "user@example.com",
+                ),
+                "stepPersonalData" to mapOf(
+                    "firstName" to "Ale",
+                    "lastName" to "Caballero",
+                    "dob" to "1990-05-14",
+                    "documentNumber" to "210.196.573-91",
+                    "motherName" to "Maria Caballero",
+                ),
+                "stepAddress" to mapOf(
+                    "postalCode" to "01310-100",
+                ),
+            ),
+        ),
+    )
+    .build()
+```
+
+Only `stepEmail`, `stepPersonalData` and `stepAddress` are recognized. Other step keys are
+accepted and ignored.
+
+Field keys are matched leniently — case and separators are ignored, so `firstName`, `first_name`
+and `First Name` all reach the same field. Which fields a step contains is decided by AstroPay and
+can vary by country and partner, so a key that matches no field in the step is ignored.
+
+#### Onboarding Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `stepEmail` | `Map<String, Any>` | No | Field values for the email step |
+| `stepPersonalData` | `Map<String, Any>` | No | Field values for the personal data step |
+| `stepAddress` | `Map<String, Any>` | No | Postal code for the address step — `postalCode` is the only accepted field |
+
+#### Step Fields
+
+| Step | Field | Type | Description |
+|------|-------|------|-------------|
+| `stepEmail` | `email` | `String` | Email address to prefill |
+| `stepPersonalData` | `firstName` | `String` | Given name to prefill |
+| `stepPersonalData` | `lastName` | `String` | Family name to prefill |
+| `stepPersonalData` | `dob` | `String` | Date of birth as `YYYY-MM-DD` (e.g., `"1990-05-14"`). Do not send a timestamp |
+| `stepPersonalData` | `documentNumber` | `String` | Identity document number to prefill. Both the formatted and the digits-only form are accepted (e.g., `"210.196.573-91"` or `"21019657391"`) |
+| `stepPersonalData` | `motherName` | `String` | Mother's name to prefill. Brazil only |
+| `stepAddress` | `postalCode` | `String` | Postal code / CEP. Both the formatted and the digits-only form are accepted (e.g., `"01310-100"` or `"01310100"`) |
+
+> **Existing values win:** prefill only fills fields that are still empty. Any value AstroPay
+> already holds for the user is kept and never overwritten.
+
+> **Not prefillable:** checkboxes and multi-select fields cannot be prefilled — consent and legal
+> declarations must be made by the user. The PIN field can never be prefilled.
+
+> **Document number formatting:** `documentNumber` is accepted with or without separators — dots,
+> hyphens and spaces are ignored when the value is checked. Send whichever form you hold; the user
+> can edit it before submitting.
+
+> **Address prefill covers the postal code only:** `postalCode` prefills the postal-code lookup
+> screen that opens the address step. The rest of the address is completed from that lookup, so no
+> other address field is accepted. The user still confirms the postal code — nothing is submitted
+> automatically.
+
+> **Unknown or invalid values are ignored silently:** nothing is shown to the user as an error and
+> nothing is reported back to your app. This covers unrecognized step keys, field keys that match no
+> field in the step, and a `dob` that is not in `YYYY-MM-DD` format or is not a real calendar date
+> (for example `1990-02-31`).
+
+> **Privacy:** send only data the user has consented to share with AstroPay. The values are used to
+> prefill an editable form that the user still confirms.
 
 ## Integration
 
@@ -666,9 +833,10 @@ You can customize the SDK's visual appearance using `AstroStyle`. This allows yo
 | `border`          | `AstroBorderColors?`   | Stroke colors for outlines, dividers, and separators. See [Style Tokens Reference](STYLE-TOKENS.md#astrobordercolors).                   |
 | `typography`      | `AstroTypography?`           | Global typography settings — single field `fontFamily: String?` used as the default font family across the SDK. See [Style Tokens Reference](STYLE-TOKENS.md#astrotypography). |
 | `buttons`         | `AstroButtonStyle?`          | Wrapper around `AstroButtonColors` (12 variants × 11 props) and optional `AstroButtonTypography`. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttonstyle). |
-| `buttonsIcon`     | `AstroButtonIconStyle?`      | Wrapper around `AstroButtonIconColors` (same 12 variants, icon-specific) and optional `AstroButtonIconTypography`. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttoniconstyle). |
+| `buttonsIcon`     | `AstroButtonIconStyle?`      | Wrapper around `AstroButtonIconColors` (14 variants, icon-specific — including two icon-only back-button variants) and optional `AstroButtonIconTypography`. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttoniconstyle). |
 | `buttonsPill`     | `AstroButtonPillStyle?`      | Wrapper around `AstroButtonPillColors` (14 statuses) and optional `AstroButtonPillTypography`. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttonpillstyle). |
 | `inputs`          | `AstroInputStyle?`           | Wrapper around `AstroInputColors` and optional `AstroInputTypography` (input / label / helper / placeholder). See [Style Tokens Reference](STYLE-TOKENS.md#astroinputstyle). |
+| `avatar`          | `AstroAvatarColors?`         | Colors for user avatars and avatar groups. See [Style Tokens Reference](STYLE-TOKENS.md#astroavatarcolors). |
 | `header`          | `AstroHeaderStyle?`    | Header style settings                                                                                                  |
 
 > All color values are `@ColorInt Int?` — construct them with `Color(0xFF…).toArgb()`, `ContextCompat.getColor(context, R.color.x)`, or any standard Android color literal. Alpha is honored: an `@ColorInt` with an alpha channel below `0xFF` (e.g. `0x80FF0000` for 50%-opacity red) is delivered to the SDK and rendered with transparency. See the [Style Tokens Reference — Color values](STYLE-TOKENS.md#color-values) for details.

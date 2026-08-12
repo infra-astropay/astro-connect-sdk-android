@@ -3,6 +3,17 @@
 All notable changes to the AstroConnectSDK for Android will be documented in this file.
 
 ---
+## [1.0.17]
+
+### Added
+
+- **QR Scanner**: the SDK now presents its own built-in QR scanner when the user taps "Scan QR Code" in the PIX Send Money flow. No configuration is required from the host app. The `android.permission.CAMERA` permission must be declared in your `AndroidManifest.xml` (already required for identity verification).
+- **External banner links**: a home banner can now send the user outside the SDK — to a website or to a screen in your own app — by setting `bannerLinkTarget` to `"external"`. Purely additive: existing banner payloads keep their current behavior. See [Banner Link Target](README.md#banner-link-target) in the README.
+- **Dismissible header banners**: a `home-header` banner can now show a close button while still being tappable, by setting `bannerDismissible` to `true`. Previously a banner could be either dismissible or tappable, not both. Purely additive: existing banner payloads keep their current behavior. See [Dismissing a header banner](README.md#dismissing-a-header-banner) in the README.
+- **Avatar colors**: `AstroStyle` now exposes an `avatar` slot for theming user avatars and avatar groups. Purely additive — existing configurations are unaffected. See [Style Tokens Reference](STYLE-TOKENS.md#astroavatarcolors).
+- **Back button colors**: `AstroStyle.buttonsIcon` now exposes two icon-only back-button variants (`backDefault*` and `backTransparent*`, 22 tokens) so the back button can be themed independently from the gray and transparent icon buttons. Purely additive and color-neutral on upgrade — until you set them, the back button keeps exactly the colors it has today. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttoniconstyle).
+
+---
 
 ## [1.0.16]
 

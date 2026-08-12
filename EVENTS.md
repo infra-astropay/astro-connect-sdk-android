@@ -123,6 +123,18 @@ Reference document for all events dispatched through Astro Connect SDK.
 | `page_error` | Full-page error screen |
 | `modal_error` | Error dialog/modal |
 
+### Dynamic Self-Service Flows
+
+| Screen Name | Description |
+|-------------|-------------|
+| `dssf_workflow` | Coordinator-level (no specific step active) |
+| `dssf_workflow_list` | Workflow selection list screen |
+| `dssf_form` | FORM step screen |
+| `dssf_context` | CONTEXT step screen |
+| `dssf_waiting_for_update` | WAITING_FOR_UPDATE step screen |
+| `dssf_operation_result` | OPERATION_RESULT step screen |
+| `dssf_upload_file` | UPLOAD_FILE step screen |
+
 ---
 
 ## Event Names
@@ -289,6 +301,9 @@ Reference document for all events dispatched through Astro Connect SDK.
 | `home_banner_page_action` | `user_action` | User tapped the primary action button on the full-screen home banner. `eventProperties: { bannerType: "home-page" | "home-header", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-05-11 |
 | `home_banner_page_dismiss` | `user_action` | User tapped the dismiss button on the full-screen home banner. `eventProperties: { bannerType: "home-page" | "home-header", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-05-11 |
 | `home_banner_header_action` | `user_action` | User tapped a home header banner (whole area or action button). `eventProperties: { bannerType: "home-page" | "home-header", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-05-11 |
+| `home_banner_header_dismiss` | `user_action` | User tapped the dismiss (X) button on a home header banner (the dismiss control appears only when the banner's deepLink is `"none"`). `eventProperties: { bannerType: "home-page" | "home-header", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-07-13 |
+
+> Home header banners report action and dismiss only — there is no impression event for them. Banners on the add-funds surfaces do report impressions (see below).
 
 ### Add Funds — Select Currency
 
@@ -296,6 +311,11 @@ Reference document for all events dispatched through Astro Connect SDK.
 |------------|----------|-------------|-------|
 | `add_funds_select_currency_start` | `page_view` | Currency selection screen became visible | — |
 | `btn_select_currency` | `user_action` | User selected a currency | — |
+| `add_funds_select_currency_banner_impression` | `page_view` | A banner on the currency selection screen became visible. `eventProperties: { bannerType: "topup-select-currency", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-08-04 |
+| `add_funds_select_currency_banner_action` | `user_action` | User tapped a banner on the currency selection screen (whole area or action button). `eventProperties: { bannerType: "topup-select-currency", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-08-04 |
+| `add_funds_select_currency_banner_dismiss` | `user_action` | User tapped the dismiss (X) button on a banner on the currency selection screen. `eventProperties: { bannerType: "topup-select-currency", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-08-04 |
+
+> The currency selection screen is skipped for users who hold a single wallet, so these events only occur for users with more than one currency.
 
 ### Add Funds — Select Amount
 
@@ -309,6 +329,9 @@ Reference document for all events dispatched through Astro Connect SDK.
 |------------|----------|-------------|-------|
 | `add_funds_select_method_start` | `page_view` | Payment method selection screen became visible | — |
 | `btn_select_method` | `user_action` | User selected a payment method | — |
+| `add_funds_select_method_banner_impression` | `page_view` | A banner on the payment method selection screen became visible. `eventProperties: { bannerType: "topup-select-method", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-08-04 |
+| `add_funds_select_method_banner_action` | `user_action` | User tapped a banner on the payment method selection screen (whole area or action button). `eventProperties: { bannerType: "topup-select-method", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-08-04 |
+| `add_funds_select_method_banner_dismiss` | `user_action` | User tapped the dismiss (X) button on a banner on the payment method selection screen. `eventProperties: { bannerType: "topup-select-method", bannerTitle?: string, bannerDescription?: string, bannerDeepLink?: string }` | 2026-08-04 |
 
 ### Add Funds — Checkout
 
@@ -421,3 +444,29 @@ These events are reused across multiple screens and carry meaning from their `sc
 | `btn_cancel` | `user_action` | User tapped a "Cancel" button | — |
 | `btn_retry` | `user_action` | User tapped a "Retry" button | — |
 | `btn_back` | `user_action` | User tapped "Back" to return to previous screen | — |
+
+### Dynamic Self-Service Flows (DSSF)
+
+| Event Name | Category | Description | Added |
+|------------|----------|-------------|-------|
+| `dssf_workflow_list_start` | `impression` | Workflow list screen became visible | 2026-05-29 |
+| `dssf_workflow_list_btn_select` | `user_action` | User selected a workflow from the list | 2026-05-29 |
+| `dssf_workflow_start` | `impression` | A specific workflow started running | 2026-05-29 |
+| `dssf_step_form_start` | `impression` | FORM step became visible | 2026-05-29 |
+| `dssf_step_form_btn_continue` | `user_action` | User submitted a valid FORM step | 2026-05-29 |
+| `dssf_step_form_validation_error` | `user_action` | User attempted to submit an invalid FORM | 2026-05-29 |
+| `dssf_step_context_start` | `impression` | CONTEXT step became visible | 2026-05-29 |
+| `dssf_step_context_btn_continue` | `user_action` | User tapped Continue on a CONTEXT step | 2026-05-29 |
+| `dssf_step_waiting_for_update_start` | `impression` | WAITING_FOR_UPDATE step became visible | 2026-05-29 |
+| `dssf_step_waiting_for_update_btn_cancel` | `user_action` | User cancelled while waiting for update | 2026-05-29 |
+| `dssf_step_operation_result_start` | `impression` | OPERATION_RESULT step became visible | 2026-05-29 |
+| `dssf_step_operation_result_btn_done` | `user_action` | User tapped Done on a SUCCESS result | 2026-05-29 |
+| `dssf_step_operation_result_btn_close` | `user_action` | User tapped Close on a FAILURE result | 2026-05-29 |
+| `dssf_step_operation_result_btn_help` | `user_action` | User tapped Help/Contact support | 2026-05-29 |
+| `dssf_step_upload_file_start` | `impression` | UPLOAD_FILE step became visible | 2026-05-29 |
+| `dssf_step_upload_file_upload_success` | `impression` | File uploaded successfully | 2026-05-29 |
+| `dssf_step_upload_file_upload_error` | `impression` | File upload failed | 2026-05-29 |
+| `dssf_step_upload_file_btn_continue` | `user_action` | User tapped Continue after successful upload | 2026-05-29 |
+| `dssf_workflow_completed` | `impression` | Workflow reached completion | 2026-05-29 |
+| `dssf_workflow_closed` | `impression` | Workflow was closed before completion | 2026-05-29 |
+| `dssf_workflow_error` | `impression` | Workflow encountered an unrecoverable error | 2026-05-29 |
