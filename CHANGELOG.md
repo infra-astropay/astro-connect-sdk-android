@@ -3,13 +3,27 @@
 All notable changes to the AstroConnectSDK for Android will be documented in this file.
 
 ---
+## [1.0.18]
+
+### Added
+
+- **File preview and sharing**: receipts and other documents now open in a full-screen preview inside the SDK, with a button to share or save them. The SDK declares its own `FileProvider` (authority `<applicationId>.astroconnect.fileprovider`), which merges into your manifest automatically and does not conflict with one of your own. No action required.
+- **Identity verification events**: the KYC flow reports more of its progress on the SDK's event callback — the document type and capture method the user chose, each capture step, the start of the face check and its retryable problems, and when the user closes a capture or goes back. Purely additive. See [Events Reference](EVENTS.md).
+- **Camera permission**: when camera access is denied and Android no longer shows its permission prompt, the KYC start screen offers a button that opens your app's page in the system settings. No action required.
+
+### Fixed
+
+- Fixed receipts that could not be opened from inside the SDK.
+
+---
+
 ## [1.0.17]
 
 ### Added
 
-- **QR Scanner**: the SDK now presents its own built-in QR scanner when the user taps "Scan QR Code" in the PIX Send Money flow. No configuration is required from the host app. The `android.permission.CAMERA` permission must be declared in your `AndroidManifest.xml` (already required for identity verification).
-- **External banner links**: a home banner can now send the user outside the SDK — to a website or to a screen in your own app — by setting `bannerLinkTarget` to `"external"`. Purely additive: existing banner payloads keep their current behavior. See [Banner Link Target](README.md#banner-link-target) in the README.
-- **Dismissible header banners**: a `home-header` banner can now show a close button while still being tappable, by setting `bannerDismissible` to `true`. Previously a banner could be either dismissible or tappable, not both. Purely additive: existing banner payloads keep their current behavior. See [Dismissing a header banner](README.md#dismissing-a-header-banner) in the README.
+- **QR Scanner**: the SDK now presents its own built-in QR scanner when the user taps "Scan QR Code" in the PIX Send Money flow. No configuration is required from the host app. The SDK's manifest already declares `android.permission.CAMERA`, which merges into your app automatically, so no manifest change is needed.
+- **External banner links**: a home banner can now send the user outside the SDK — to a website or to a screen in your own app — by setting `bannerLinkTarget` to `"external"`. Purely additive: existing banner payloads keep their current behavior. See [Banner Link Target](BANNERS.md#banner-link-target) in the Banners guide.
+- **Dismissible header banners**: a `home-header` banner can now show a close button while still being tappable, by setting `bannerDismissible` to `true`. Previously a banner could be either dismissible or tappable, not both. Purely additive: existing banner payloads keep their current behavior. See [Dismissing a header banner](BANNERS.md#dismissing-a-header-banner) in the Banners guide.
 - **Avatar colors**: `AstroStyle` now exposes an `avatar` slot for theming user avatars and avatar groups. Purely additive — existing configurations are unaffected. See [Style Tokens Reference](STYLE-TOKENS.md#astroavatarcolors).
 - **Back button colors**: `AstroStyle.buttonsIcon` now exposes two icon-only back-button variants (`backDefault*` and `backTransparent*`, 22 tokens) so the back button can be themed independently from the gray and transparent icon buttons. Purely additive and color-neutral on upgrade — until you set them, the back button keeps exactly the colors it has today. See [Style Tokens Reference](STYLE-TOKENS.md#astrobuttoniconstyle).
 
@@ -19,7 +33,7 @@ All notable changes to the AstroConnectSDK for Android will be documented in thi
 
 ### Added
 
-- **Native KYC** (`com.astropay:connect-native-kyc` artifact): the SDK now runs the identity verification flow natively on the device when the server enables it, instead of falling back to an in-app browser session. Native KYC ships in the new `com.astropay:connect-native-kyc` artifact; the core `com.astropay:connect` artifact is unchanged for everyone else and includes no identity-verification dependency, so it needs no extra Maven repository. The native flow honors your configured `style` / `styleOverrides`, `theme`, and `language`. Choose the artifact that matches your flows — see [Installation](README.md#installation).
+- **Native KYC** (`com.astropay:connect-native-kyc` artifact): the SDK now runs the identity verification flow natively on the device when the server enables it, instead of using the SDK's standard verification flow. Native KYC ships in the new `com.astropay:connect-native-kyc` artifact; the core `com.astropay:connect` artifact is unchanged for everyone else and includes no identity-verification dependency, so it needs no extra Maven repository. The native flow honors your configured `style` / `styleOverrides` and `theme`; its screens follow the device language, not the `language` setting. Choose the artifact that matches your flows — see [Installation](README.md#installation).
 - When using `com.astropay:connect-native-kyc`, the SDK's manifest declares `android.permission.RECORD_AUDIO`. This permission merges into your app automatically and is required by the face liveness module. The SDK requests it at runtime alongside the camera permission when the KYC flow is triggered — no changes to your `AndroidManifest.xml` are needed. The core `com.astropay:connect` artifact does not declare this permission.
 - **Native KYC progress events**: the native identity verification flow now reports its progress on the SDK's event callback (`AstroResult.Event`), emitting a loading event when the flow starts and further events when a document result and a liveness result are produced. Purely additive — no action required.
 
@@ -97,7 +111,7 @@ All notable changes to the AstroConnectSDK for Android will be documented in thi
 
 - **Pre-warming**: new `AstroConnect.preWarm` to initialize the SDK in the background early in the app lifecycle, reducing first-open latency. Optional `appIssuer` parameter prepares the co-branded header logo in advance.
 - **Pre-loading**: new `AstroConnect.preload` to load the SDK with a specific configuration before presenting it, so `AstroConnectView` opens with no loading screen.
-- **Clear**: new `AstroConnect.clear` to reset SDK data (cookies, local storage, caches). Also discards any active pre-load.
+- **Clear**: new `AstroConnect.clear` to reset SDK data (cookies, local storage, caches). Also discards any active pre-load. Intended for testing only — see [Clearing SDK Data](README.md#clearing-sdk-data).
 
 ### Removed
 

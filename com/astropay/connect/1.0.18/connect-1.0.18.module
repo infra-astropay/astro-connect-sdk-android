@@ -1,0 +1,215 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.astropay",
+    "module": "connect",
+    "version": "1.0.18",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.10.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "coreReleaseApiElements-published",
+      "attributes": {
+        "com.android.build.api.attributes.ProductFlavor:kyc": "core",
+        "kyc": "core",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.compose.material",
+          "module": "material-icons-core"
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "connect-1.0.18.aar",
+          "url": "connect-1.0.18.aar",
+          "size": 475816,
+          "sha512": "a76b37d23e1132ebd4eedb902f33f03aa6cc8c9d41b34d7d2b0a68bd51c1987edda739ac03ab4c6351fd96f06cbae964a658f44434bcfddddef5ab372658b039",
+          "sha256": "c70471e1a0be375b35355c178120f451a1cf1b20de363aa9e0fdf9e38c423adb",
+          "sha1": "580e39bc7c8570f64dc7f0e221d7133583ea4550",
+          "md5": "877c4f21bdc4611b7d70fcf42d9e6371"
+        }
+      ]
+    },
+    {
+      "name": "coreReleaseRuntimeElements-published",
+      "attributes": {
+        "com.android.build.api.attributes.ProductFlavor:kyc": "core",
+        "kyc": "core",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.core",
+          "module": "core-ktx",
+          "version": {
+            "requires": "1.13.1"
+          }
+        },
+        {
+          "group": "androidx.appcompat",
+          "module": "appcompat",
+          "version": {
+            "requires": "1.7.1"
+          }
+        },
+        {
+          "group": "com.google.android.material",
+          "module": "material",
+          "version": {
+            "requires": "1.13.0"
+          }
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-ktx",
+          "version": {
+            "requires": "1.8.2"
+          }
+        },
+        {
+          "group": "androidx.biometric",
+          "module": "biometric",
+          "version": {
+            "requires": "1.1.0"
+          }
+        },
+        {
+          "group": "androidx.camera",
+          "module": "camera-core",
+          "version": {
+            "requires": "1.3.4"
+          }
+        },
+        {
+          "group": "androidx.camera",
+          "module": "camera-camera2",
+          "version": {
+            "requires": "1.3.4"
+          }
+        },
+        {
+          "group": "androidx.camera",
+          "module": "camera-lifecycle",
+          "version": {
+            "requires": "1.3.4"
+          }
+        },
+        {
+          "group": "androidx.camera",
+          "module": "camera-view",
+          "version": {
+            "requires": "1.3.4"
+          }
+        },
+        {
+          "group": "com.google.mlkit",
+          "module": "barcode-scanning",
+          "version": {
+            "requires": "17.3.0"
+          }
+        },
+        {
+          "group": "androidx.security",
+          "module": "security-crypto",
+          "version": {
+            "requires": "1.1.0-alpha06"
+          }
+        },
+        {
+          "group": "androidx.compose",
+          "module": "compose-bom",
+          "version": {
+            "requires": "2024.04.01"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          }
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui"
+        },
+        {
+          "group": "androidx.compose.material3",
+          "module": "material3"
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-compose",
+          "version": {
+            "requires": "1.8.0"
+          }
+        },
+        {
+          "group": "androidx.compose.material",
+          "module": "material-icons-core"
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "connect-1.0.18.aar",
+          "url": "connect-1.0.18.aar",
+          "size": 475816,
+          "sha512": "a76b37d23e1132ebd4eedb902f33f03aa6cc8c9d41b34d7d2b0a68bd51c1987edda739ac03ab4c6351fd96f06cbae964a658f44434bcfddddef5ab372658b039",
+          "sha256": "c70471e1a0be375b35355c178120f451a1cf1b20de363aa9e0fdf9e38c423adb",
+          "sha1": "580e39bc7c8570f64dc7f0e221d7133583ea4550",
+          "md5": "877c4f21bdc4611b7d70fcf42d9e6371"
+        }
+      ]
+    },
+    {
+      "name": "coreReleaseSourcesElements-published",
+      "attributes": {
+        "com.android.build.api.attributes.ProductFlavor:kyc": "core",
+        "kyc": "core",
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "files": [
+        {
+          "name": "connect-1.0.18-sources.jar",
+          "url": "connect-1.0.18-sources.jar",
+          "size": 233487,
+          "sha512": "46f7203f124f8dfec4149e95c787e9307531d16bc786cbd095b21a221ed30a9b31245915890bec78553a86e2dc2bf6f7a1cf67d2625fe629f7b9b3d1b2ef1227",
+          "sha256": "1dc400a16c5ae98ec8c3966cabdbec9f83fbaf2f1912787b9bd5f6a4a95fd9da",
+          "sha1": "e56955fe37d8bc03ccfa6f7d73c7cec0b95a792a",
+          "md5": "8caddfd65fd8fb0ebd4a09816e511ac1"
+        }
+      ]
+    }
+  ]
+}

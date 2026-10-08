@@ -10,7 +10,7 @@ The SDK ships in **two flavors**: a **core** artifact (`com.astropay:connect`) f
 - Kotlin 1.9+
 - Jetpack Compose
 
-> **Note:** The native KYC flow (available with the `com.astropay:connect-native-kyc` artifact) requires Android 8.0 (API 26) or higher. Devices running Android 7.x (API 24–25) will receive an error result from the KYC flow; all other SDK features remain fully functional.
+> **Note:** The native KYC flow (available with the `com.astropay:connect-native-kyc` artifact) requires Android 8.0 (API 26) or higher. On devices running Android 7.x (API 24–25) the native KYC flow does not run: the identity verification step ends on an error screen inside the SDK. All other SDK features remain fully functional.
 
 ## Installation
 
@@ -20,12 +20,12 @@ The SDK ships **two artifacts** at the same version — the same integration cod
 
 | Artifact | Use when | On-device identity verification | Extra Maven repository |
 |----------|----------|---------------------------------|------------------------|
-| `com.astropay:connect` (core) | The standard artifact for most integrations. Identity verification, when the server requests it, runs through the standard in-app browser flow. | Not included | None |
-| `com.astropay:connect-native-kyc` (native KYC) | You operate in a regulated market (e.g. Brazil) that requires **on-device identity verification** — face liveness and document capture handled natively in your app rather than in the in-app browser. | Included | Requires the CAF repository (see below) |
+| `com.astropay:connect` (core) | The standard artifact for most integrations. Identity verification, when the server requests it, runs through the SDK's standard verification flow. | Not included | None |
+| `com.astropay:connect-native-kyc` (native KYC) | You operate in a regulated market (e.g. Brazil) that requires **on-device identity verification** — face liveness and document capture handled natively in your app rather than by the SDK's standard verification flow. | Included | Requires the CAF repository (see below) |
 
 **Not sure which to pick?** Use the core **`com.astropay:connect`** artifact — most integrations don't need native KYC, and switching to `com.astropay:connect-native-kyc` later requires **no code changes** (see [Switching between core and native KYC](#switching-between-core-and-native-kyc)).
 
-Both artifacts expose the identical public API — only the bundled native KYC capability and the required Maven repositories differ. If you integrate `com.astropay:connect` and a native KYC flow is requested, it returns an error result instead of running, and every other feature works normally.
+Both artifacts expose the identical public API — only the bundled native KYC capability and the required Maven repositories differ. If you integrate `com.astropay:connect` and a native KYC flow is requested, it does not run: the identity verification step ends on an error screen inside the SDK, and every other feature works normally.
 
 ### Maven Repository
 
@@ -47,7 +47,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect:1.0.17")
+    implementation("com.astropay:connect:1.0.18")
 }
 ```
 
@@ -70,7 +70,7 @@ Then add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.astropay:connect-native-kyc:1.0.17")
+    implementation("com.astropay:connect-native-kyc:1.0.18")
 }
 ```
 
@@ -89,7 +89,7 @@ Both artifacts expose an identical public API, so moving from `com.astropay:conn
    ```
 3. No manifest changes are required — the `RECORD_AUDIO` permission used by the face liveness module merges into your app automatically.
 
-> The native KYC flow requires Android 8.0 (API 26) or higher. On API 24–25 the KYC flow returns an error result; every other SDK feature keeps working.
+> The native KYC flow requires Android 8.0 (API 26) or higher. On API 24–25 the native KYC flow does not run and the identity verification step ends on an error screen inside the SDK; every other SDK feature keeps working.
 
 To go back to core, reverse the steps: switch the dependency to `com.astropay:connect` and remove the CAF Maven repository from `settings.gradle.kts`.
 
@@ -97,12 +97,15 @@ To go back to core, reverse the steps: switch the dependency to `com.astropay:co
 
 ### Required Permissions
 
-Add the following permissions to your `AndroidManifest.xml` if the flow requires camera access:
+The SDK declares the permissions it needs in its own manifest. They merge into your app automatically, so no changes to your `AndroidManifest.xml` are required:
 
 ```xml
-<uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.CAMERA" />
 ```
+
+Camera access is requested at runtime, only when a flow needs it (for example identity verification or QR scanning).
 
 > **Important:** The camera permission dialog will display your **app name** (from `android:label` in your `AndroidManifest.xml`) when requesting access. Make sure your app has a proper `android:label` configured so users see a recognizable name instead of the package name.
 
@@ -138,7 +141,7 @@ val configuration = AstroConfiguration.builder()
     .setTheme(AstroTheme.SYSTEM)              // LIGHT, DARK, SYSTEM (optional)
     .setLanguage("en")                        // Language code (optional, default: "en")
     .setFlow("home")                          // Specific flow (optional)
-    .setFlowParams(mapOf("topup" to mapOf("amount" to 100))) // Flow parameters (optional)
+    .setFlowParams(mapOf("topup" to mapOf("amount" to 100, "currency" to "USD"))) // Flow parameters (optional)
     .setShowHeader(true)                      // Show header bar with close button (optional, default: true)
     .setShowHeaderLogo(true)                  // Show co-branded logo in header (optional, default: true)
     .setEmbedded(true)                        // Embedded mode (optional, default: true)
@@ -188,301 +191,40 @@ val configuration = AstroConfiguration(
 | `appIssuer` | `String` | Yes | Application identifier |
 | `clientId` | `String` | Yes | Client identifier |
 | `partnerUserId` | `String` | Yes | Partner user identifier |
-| `phoneCode` | `String?` | No | Phone country code (e.g., `"51"`, `"54"`) |
-| `phoneNumber` | `String?` | No | Phone number |
-| `accessToken` | `String` | No | Authentication token. |
+| `phoneCode` | `String?` | No | Phone country code (e.g., `"51"`, `"54"`). Can also be sent in `flowParams` — see [Login Phone Prefill](FLOW-PARAMETERS.md#login-phone-prefill) |
+| `phoneNumber` | `String?` | No | Phone number. Can also be sent in `flowParams` — see [Login Phone Prefill](FLOW-PARAMETERS.md#login-phone-prefill) |
+| `accessToken` | `String` | No | Authentication token. Optional with the `Builder` (defaults to an empty string); the constructor requires the argument — pass an empty string when you have no token |
 | `theme` | `AstroTheme` | No | Visual theme: `LIGHT`, `DARK`, `SYSTEM`. Default: `SYSTEM` |
 | `language` | `String` | No | Language code (e.g., `"en"`, `"es"`, `"pt"`). Default: `"en"` |
-| `flow` | `String?` | No | Flow to execute (e.g., `"home"`, `"activities"`, `"topup"`, `"cards"`) |
+| `flow` | `String?` | No | Flow to execute (e.g., `"home"`, `"activities"`, `"topup"`, `"cards"`, `"withdrawal"`). An unrecognized value opens the home |
 | `flowParams` | `Map<String, Any>?` | No | Additional flow parameters |
-| `showHeader` | `Boolean?` | No | Show header bar with close button and co-branded logo (default: `true`) |
-| `showHeaderLogo` | `Boolean?` | No | Show co-branded issuer logo in the header (default: `true`) |
+| `showHeader` | `Boolean?` | No | Show header bar with close button and co-branded logo (default: `true`). `null` behaves as `true` |
+| `showHeaderLogo` | `Boolean?` | No | Show co-branded issuer logo in the header (default: `true`). Only `true` shows it: unlike `showHeader`, an explicit `null` hides the logo |
 | `embedded` | `Boolean` | No | Embedded mode. Default: `true` |
 | `biometricGracePeriod` | `Long?` | No | Seconds to skip biometric re-prompt after a successful auth. Default: `120` (2 min). Range: `0`–`600` (10 min). Set to `0` to always require biometric. |
 | `style` | `AstroStyle?` | No | Custom style settings for background and header (see [Style Customization](#style-customization)) |
-| `styleOverrides` | `Map<String, Any>?` | No | Free-form hex/color overrides forwarded to the web, mirroring the `AstroStyle` key shape. Escape hatch for tokens not yet in the typed catalog (see [Hex-string escape hatch via `styleOverrides`](#hex-string-escape-hatch-via-styleoverrides)) |
+| `styleOverrides` | `Map<String, Any>?` | No | Free-form color and typography overrides for the same tokens as `AstroStyle`, keyed by flat names and applied on top of `style`. Escape hatch for tokens not yet in the typed catalog (see [Hex-string escape hatch via `styleOverrides`](#hex-string-escape-hatch-via-styleoverrides)) |
 | `logSetting` | `AstroLogSetting` | No | Logging configuration |
 
 <a id="home-banners"></a>
 
 ### Banners
 
-Banners are cross-cutting: you can pass them via `flowParams.banners` regardless of the active flow. The `bannerType` value determines where each banner is rendered, not the flow that was initialized. Four placements are supported:
+You can show banners on the home, the add-money flow and the onboarding flow by passing them in `flowParams.banners`. Placements, parameters, link targets, dismissal, blocking and auto-redirect are covered in [Banners](BANNERS.md).
 
-- `home-page` — full-screen banner shown once per session before the home loads (e.g. onboarding).
-- `home-header` — compact banner rendered at the top of the home.
-- `topup-select-method` — compact banner rendered on the payment method selection screen of the add-money flow.
-- `topup-select-currency` — compact banner rendered on the currency selection screen of the add-money flow. That screen is skipped for users who hold a single wallet, so a banner here is only seen by users with more than one currency.
-
-`home-header`, `topup-select-method`, and `topup-select-currency` all use the same horizontal strip layout: you can place several banners on the same surface, they scroll horizontally, and each one can be dismissed independently. `home-page` is the only full-screen placement.
-
-All banner fields below apply to every placement — to use a new surface, send the same banner payload with a different `bannerType`.
-
-Each banner is a map inside the `banners` list.
-
-By default a banner's action navigates to a destination inside the SDK. Set `bannerLinkTarget` to `"external"` to send the user outside instead — to a website or to one of your own app's screens. See [Banner Link Target](#banner-link-target).
-
-```kotlin
-val configuration = AstroConfiguration.builder()
-    .setEnvironment("sandbox")
-    .setAppIssuer("your-app-issuer")
-    .setClientId("your-client-id")
-    .setPartnerUserId("your-partner-user-id")
-    .setAccessToken("your-access-token")
-    .setFlow("home")
-    .setFlowParams(
-        mapOf(
-            "banners" to listOf(
-                mapOf(
-                    "bannerType" to "home-page",
-                    "bannerTitle" to "Your wallet is ready to use!",
-                    "bannerDescription" to "Top up now and get 5% cashback on your first transaction.",
-                    "bannerActionText" to "Top Up Now",
-                    "bannerDismissText" to "Dismiss",
-                    "bannerDeepLink" to "topup",
-                    "bannerImage" to "banner-home-page-en",
-                    "bannerImageSize" to "30vh",
-                ),
-                mapOf(
-                    "bannerType" to "home-header",
-                    "bannerTitle" to "Your wallet is ready to use!",
-                    "bannerDescription" to "Top up now and get 5% cashback.",
-                    "bannerActionText" to "Top Up Now",
-                    "bannerDeepLink" to "topup",
-                    "bannerImage" to "banner-home-header-en",
-                ),
-                mapOf(
-                    "bannerType" to "home-header",
-                    "bannerTitle" to "See our latest promotions",
-                    "bannerDescription" to "Open the promotions page on our site.",
-                    "bannerActionText" to "View",
-                    "bannerDeepLink" to "https://example.com/promotions",
-                    "bannerLinkTarget" to "external",
-                    "bannerImage" to "banner-home-header-promos-en",
-                ),
-                mapOf(
-                    "bannerType" to "topup-select-method",
-                    "bannerTitle" to "Pay with card and save",
-                    "bannerDescription" to "No fees on card top-ups this month.",
-                    "bannerActionText" to "Learn more",
-                    "bannerDeepLink" to "https://example.com/promotions",
-                    "bannerLinkTarget" to "external",
-                    "bannerDismissible" to true,
-                    "bannerImage" to "banner-topup-method-en",
-                ),
-            ),
-        ),
-    )
-    .build()
-```
-
-#### Banner Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `bannerType` | `String` | Yes | Banner placement: `"home-page"`, `"home-header"`, `"topup-select-method"` or `"topup-select-currency"` |
-| `bannerTitle` | `String?` | No | Title text |
-| `bannerDescription` | `String?` | No | Description text |
-| `bannerActionText` | `String?` | No | Primary action button label. If omitted on a strip banner (`home-header`, `topup-select-method`, `topup-select-currency`), a chevron is shown instead and the entire banner is clickable |
-| `bannerDismissText` | `String?` | No | Dismiss button label (only used by `home-page`) |
-| `bannerDeepLink` | `String` | Yes | Destination opened on action. With the default `bannerLinkTarget`, one of `"topup"`, `"activities"`, `"cards"`, `"withdrawal"`. With `bannerLinkTarget: "external"`, a full link — see [Banner Link Target](#banner-link-target) |
-| `bannerLinkTarget` | `String?` | No | Where `bannerDeepLink` opens: `"internal"` (default) or `"external"`. See [Banner Link Target](#banner-link-target) |
-| `bannerDismissible` | `Boolean?` | No | Shows a close button on a strip banner (`home-header`, `topup-select-method`, `topup-select-currency`). Independent of the banner's action — a banner can be actionable and dismissible at the same time. See [Dismissing a strip banner](#dismissing-a-strip-banner) |
-| `bannerImage` | `String?` | No | Image asset name to render on the banner |
-| `bannerImageSize` | `String?` | No | Image size for `home-page` banners. Accepts a CSS length in `px`, `vh`, or `vw` (e.g. `"200px"`, `"50vh"`, `"40vw"`). Defaults to `30vh` when omitted or invalid |
-
-#### Banner Link Target
-
-`bannerLinkTarget` controls whether the banner action stays inside the SDK or leaves it.
-
-| Value | Behavior | `bannerDeepLink` format |
-|-------|----------|-------------------------|
-| `"internal"` (default) | Navigates to a destination inside the SDK | One of `"topup"`, `"activities"`, `"cards"`, `"withdrawal"` |
-| `"external"` | Leaves the SDK and hands the link to the system | A full link, either an `https://` URL or a custom scheme |
-
-When `bannerLinkTarget` is `"external"`, the format of `bannerDeepLink` decides what opens — you do not need to declare it separately:
-
-- `"https://example.com/promotions"` opens in the device browser.
-- `"yourapp://promotions"` opens the matching screen in your own app.
-
-Only pass links the device can resolve. A custom scheme with no app installed to handle it cannot be opened. Any value of `bannerLinkTarget` other than `"external"` is treated as `"internal"`.
-
-Omitting `bannerLinkTarget` keeps the previous behavior, so existing banner payloads need no changes.
-
-<a id="dismissing-a-header-banner"></a>
-
-#### Dismissing a strip banner
-
-`bannerDismissible` adds a close button to a strip banner (`home-header`, `topup-select-method` or `topup-select-currency`), letting the user hide it for the rest of the session. It is independent of the banner's action, so all four combinations are valid:
-
-| `bannerDeepLink` | `bannerDismissible` | Result |
-|---|---|---|
-| A destination | `true` | Banner is tappable **and** shows a close button |
-| A destination | omitted | Banner is tappable, no close button |
-| `"none"` | omitted | Close button only — the banner is not tappable |
-| `"none"` | `false` | Neither: the banner just displays its content |
-
-```kotlin
-mapOf(
-    "bannerType" to "home-header",
-    "bannerTitle" to "See our latest promotions",
-    "bannerActionText" to "View",
-    "bannerDeepLink" to "https://example.com/promotions",
-    "bannerLinkTarget" to "external",
-    "bannerDismissible" to true,
-)
-```
-
-When omitted, `bannerDismissible` keeps the previous behavior: a banner with `bannerDeepLink` set to `"none"` is dismissible, and any other banner is not. Existing payloads need no changes.
-
-A dismissal lasts for the current session and is remembered per banner, identified by its title, description, and image. Banners sharing the same surface are dismissed independently — closing one leaves the others in place.
+<a id="topup-flow-parameters"></a>
 
 ### Topup Parameters
 
-Topup parameters are cross-cutting: whenever the user lands on the topup amount screen — regardless of the flow that was initialized — you can preset the amount, the currency, and a list of suggested amounts that are rendered as pills below the amount input.
-
-Pass these values under a nested `topup` map inside `flowParams`.
-
-`currency` is required for `amount` and `suggestedAmounts` to take effect: if it is omitted, or does not match the currency shown on the screen, neither is applied.
-
-```kotlin
-val configuration = AstroConfiguration.builder()
-    .setEnvironment("sandbox")
-    .setAppIssuer("your-app-issuer")
-    .setClientId("your-client-id")
-    .setPartnerUserId("your-partner-user-id")
-    .setAccessToken("your-access-token")
-    .setFlow("topup")
-    .setFlowParams(
-        mapOf(
-            "topup" to mapOf(
-                "amount" to 50,
-                "currency" to "USD",
-                "suggestedAmounts" to listOf(50, 100, 200),
-            ),
-        ),
-    )
-    .build()
-```
-
-For partners that operate multiple currencies, you can supply a per-currency preset map instead of (or alongside) the flat `suggestedAmounts` list. Keys are ISO 4217 codes (case-insensitive — they are normalized to uppercase internally):
-
-```kotlin
-// Per-currency preset map — overrides `suggestedAmounts` when present.
-// Keys are ISO 4217 codes (case-insensitive).
-val flowParams = mapOf(
-    "topup" to mapOf(
-        "suggestedAmountsByCurrency" to mapOf(
-            "USD" to listOf(10, 25, 50, 100),
-            "EUR" to listOf(10, 20, 50, 100),
-            "BRL" to listOf(50, 100, 200, 500)
-        )
-    )
-)
-```
-
-> **Precedence:** When both `suggestedAmounts` and `suggestedAmountsByCurrency` are provided, the per-currency map wins. If the user is on a currency that is not a key in the map, no preset pills are shown — the flat list is NOT consulted as a fallback.
-
-> **Deprecated:** The flat keys `amount`, `currency`, and `suggestedAmounts` placed directly under `flowParams` are still accepted for backward compatibility, but the nested `flowParams.topup` shape is the recommended form. The flat keys will be removed in a future major version.
-
-#### Topup Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `amount` | `Double` | No | Pre-fills the amount input. Requires `currency` and only applied when it matches the screen currency |
-| `currency` | `String` | No | Target currency (ISO 4217 code, e.g., `"USD"`). Required for `amount` and `suggestedAmounts` to take effect |
-| `suggestedAmounts` | `List<Double>` | No | List of positive amounts rendered as clickable pills below the input. Tapping a pill sets the input to that value. Requires `currency` and only rendered when it matches the screen currency. Ignored entirely when `suggestedAmountsByCurrency` is provided |
-| `suggestedAmountsByCurrency` | `Map<String, List<Double>>` | No | Per-currency preset map. Keys are ISO 4217 codes (case-insensitive). When present, takes precedence over `suggestedAmounts`; if the screen currency is not a key in the map, no preset pills are shown |
+Whenever the user lands on the topup amount screen, you can preset the amount, the currency, a list of suggested amounts and the minimum amount through `flowParams.topup`. See [Topup Parameters](FLOW-PARAMETERS.md#topup-parameters).
 
 ### Onboarding Prefill
 
-Onboarding prefill lets you fill in some of the onboarding form fields with values you already
-hold for the user — for example the email address and personal data collected when they signed up
-in your app. Prefilled values are editable: the user still reviews and confirms the form before
-submitting it.
+You can fill in some of the onboarding form fields with values you already hold for the user through `flowParams.onboarding`. See [Onboarding Prefill](FLOW-PARAMETERS.md#onboarding-prefill).
 
-Pass these values under a nested `onboarding` map inside `flowParams`. **No SDK update is
-required** — the values travel inside the existing `flowParams`, so this works on any installed SDK
-version.
+### Login Phone Prefill
 
-```kotlin
-val configuration = AstroConfiguration.builder()
-    .setEnvironment("sandbox")
-    .setAppIssuer("your-app-issuer")
-    .setClientId("your-client-id")
-    .setPartnerUserId("your-partner-user-id")
-    .setAccessToken("your-access-token")
-    .setFlowParams(
-        mapOf(
-            "onboarding" to mapOf(
-                "stepEmail" to mapOf(
-                    "email" to "user@example.com",
-                ),
-                "stepPersonalData" to mapOf(
-                    "firstName" to "Ale",
-                    "lastName" to "Caballero",
-                    "dob" to "1990-05-14",
-                    "documentNumber" to "210.196.573-91",
-                    "motherName" to "Maria Caballero",
-                ),
-                "stepAddress" to mapOf(
-                    "postalCode" to "01310-100",
-                ),
-            ),
-        ),
-    )
-    .build()
-```
-
-Only `stepEmail`, `stepPersonalData` and `stepAddress` are recognized. Other step keys are
-accepted and ignored.
-
-Field keys are matched leniently — case and separators are ignored, so `firstName`, `first_name`
-and `First Name` all reach the same field. Which fields a step contains is decided by AstroPay and
-can vary by country and partner, so a key that matches no field in the step is ignored.
-
-#### Onboarding Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `stepEmail` | `Map<String, Any>` | No | Field values for the email step |
-| `stepPersonalData` | `Map<String, Any>` | No | Field values for the personal data step |
-| `stepAddress` | `Map<String, Any>` | No | Postal code for the address step — `postalCode` is the only accepted field |
-
-#### Step Fields
-
-| Step | Field | Type | Description |
-|------|-------|------|-------------|
-| `stepEmail` | `email` | `String` | Email address to prefill |
-| `stepPersonalData` | `firstName` | `String` | Given name to prefill |
-| `stepPersonalData` | `lastName` | `String` | Family name to prefill |
-| `stepPersonalData` | `dob` | `String` | Date of birth as `YYYY-MM-DD` (e.g., `"1990-05-14"`). Do not send a timestamp |
-| `stepPersonalData` | `documentNumber` | `String` | Identity document number to prefill. Both the formatted and the digits-only form are accepted (e.g., `"210.196.573-91"` or `"21019657391"`) |
-| `stepPersonalData` | `motherName` | `String` | Mother's name to prefill. Brazil only |
-| `stepAddress` | `postalCode` | `String` | Postal code / CEP. Both the formatted and the digits-only form are accepted (e.g., `"01310-100"` or `"01310100"`) |
-
-> **Existing values win:** prefill only fills fields that are still empty. Any value AstroPay
-> already holds for the user is kept and never overwritten.
-
-> **Not prefillable:** checkboxes and multi-select fields cannot be prefilled — consent and legal
-> declarations must be made by the user. The PIN field can never be prefilled.
-
-> **Document number formatting:** `documentNumber` is accepted with or without separators — dots,
-> hyphens and spaces are ignored when the value is checked. Send whichever form you hold; the user
-> can edit it before submitting.
-
-> **Address prefill covers the postal code only:** `postalCode` prefills the postal-code lookup
-> screen that opens the address step. The rest of the address is completed from that lookup, so no
-> other address field is accepted. The user still confirms the postal code — nothing is submitted
-> automatically.
-
-> **Unknown or invalid values are ignored silently:** nothing is shown to the user as an error and
-> nothing is reported back to your app. This covers unrecognized step keys, field keys that match no
-> field in the step, and a `dob` that is not in `YYYY-MM-DD` format or is not a real calendar date
-> (for example `1990-02-31`).
-
-> **Privacy:** send only data the user has consented to share with AstroPay. The values are used to
-> prefill an editable form that the user still confirms.
+You can fill in the phone number on the login screen through `flowParams.login`. See [Login Phone Prefill](FLOW-PARAMETERS.md#login-phone-prefill).
 
 ## Integration
 
@@ -514,7 +256,7 @@ fun MyScreen() {
             onResult = { result ->
                 when (result) {
                     is AstroResult.Success -> {
-                        println("Operation completed successfully")
+                        println("SDK loaded and on screen")
                     }
                     is AstroResult.Failure -> {
                         println("Error: ${result.error.errorDetail}")
@@ -550,7 +292,7 @@ fun MyScreen() {
 }
 ```
 
-> **Custom header?** If your host renders its own header instead of the built-in one, drive the SDK with `AstroConnectController` and set `showHeader = false` so you can wire your own close button to `controller.close(...)`. See [Custom Header](#custom-header) for the full setup.
+> **Custom header?** If your host renders its own header instead of the built-in one, drive the SDK with `AstroConnectController` and set `showHeader = false` so you can wire your own close button to `controller.close()`. See [Custom Header](#custom-header) for the full setup.
 
 ## Performance Optimization
 
@@ -621,7 +363,11 @@ AstroConnect.preload(
 
 ### Clearing SDK Data
 
-Resets the SDK to a clean state. Also discards any active pre-load. Call this after user logout or when a fresh start is required.
+Resets the SDK to a clean state and discards any active pre-load.
+
+> **For testing only — not recommended in production.** `clear` is meant for development and QA, for example to start from a clean state between test runs. Do not call it as part of your app's normal flow, such as on user logout.
+>
+> **On Android it affects your whole app, not only the SDK.** It deletes the cookies, local storage and cached data of **all** web content your app displays, including your own web views. Anything kept there — such as a session your user has in that content — is lost.
 
 ```kotlin
 AstroConnect.clear(
@@ -643,9 +389,11 @@ AstroConnect.clear(
 
 The SDK returns an `AstroResult` sealed class with four possible states:
 
+> **`Success` means the SDK finished loading**, not that the user completed an operation. It is delivered once, when the SDK content is ready and shown in place of the loading view. If loading fails instead, you receive `Failure` and `Success` is not delivered. To follow what the user does afterwards, use `Event` and the `code` of `Closed`.
+
 ```kotlin
 sealed class AstroResult {
-    data object Success : AstroResult()                                              // Operation completed successfully
+    data object Success : AstroResult()                                              // The SDK finished loading and is on screen
     data class Failure(val error: AstroError) : AstroResult()                        // An error occurred
     data class Closed(val code: String, val message: String) : AstroResult()         // User closed the SDK
     data class Event(val event: AstroEvent) : AstroResult()                          // An analytics event was received
@@ -655,7 +403,7 @@ sealed class AstroResult {
 ```kotlin
 onResult = { result ->
     when (result) {
-        is AstroResult.Success -> println("Success")
+        is AstroResult.Success -> println("SDK loaded")
         is AstroResult.Failure -> println("Error: ${result.error.errorDetail}")
         is AstroResult.Closed -> println("Closed: ${result.code} — ${result.message}")
         is AstroResult.Event -> {
@@ -684,15 +432,17 @@ Both are plain strings. There is no enum or whitelist on the integrator side; th
 | `CLOSED_BY_USER_NAVIGATED_BACK` | User backed out at the root of a flow sub-tree | descriptive (e.g., `User backed out of activities`) |
 | `CLOSED_BY_USER_DISMISSED_ERROR` | User dismissed a terminal-error screen | descriptive (e.g., `User dismissed biometric error`) |
 | `CLOSED_BY_USER_CANCELLED_PIN` | User cancelled the PIN re-prompt | `User cancelled PIN re-prompt` |
-| `CLOSED_BY_USER_SIGNED_OUT` | User signed out from inside the SDK | `User signed out` |
+| `CLOSED_BY_USER_SIGNED_OUT` | User signed out from inside the SDK, or closed their account | `User signed out` |
+| `CLOSED_BY_USER_COMPLETED_FLOW` | User completed a self-service flow that was the screen the SDK opened on | `User completed the self-service flow` |
+| `CLOSED_BY_USER_BANNER_ACTION` | User took the action of a partner banner configured with `bannerAfterAction: "closeSDK"` | descriptive, naming the banner type (e.g., `User followed the home-header banner action out of the SDK`) |
 
-The `CLOSED_BY_USER_NAVIGATED_BACK`, `CLOSED_BY_USER_DISMISSED_ERROR`, `CLOSED_BY_USER_CANCELLED_PIN`, and `CLOSED_BY_USER_SIGNED_OUT` entries above are common examples — the list of in-SDK codes is not exhaustive.
+The `CLOSED_BY_USER_NAVIGATED_BACK`, `CLOSED_BY_USER_DISMISSED_ERROR`, `CLOSED_BY_USER_CANCELLED_PIN`, `CLOSED_BY_USER_SIGNED_OUT`, and `CLOSED_BY_USER_COMPLETED_FLOW` entries above are common examples — the list of in-SDK codes is not exhaustive.
 
 ### Using Result Extensions
 
 ```kotlin
 result
-    .onSuccess { println("Success!") }
+    .onSuccess { println("SDK loaded") }
     .onFailure { error -> println("Error: ${error.errorDetail}") }
     .onClosed { code, message -> println("User closed SDK: $code — $message") }
     .onEvent { event -> println("Event: ${event.eventName}") }
@@ -711,7 +461,7 @@ data class AstroEvent(
     val eventCategory: String,           // Category: "user_action", "page_view", etc.
     val eventProperties: Map<String, Any>?,  // Additional event data (optional)
     val sessionId: String,               // Session identifier
-    val appVersion: String,              // SDK version
+    val appVersion: String,              // Version of the SDK content that emitted the event (not the SDK version you installed)
     val platform: String                 // Platform: "android"
 )
 ```
@@ -750,7 +500,7 @@ error.errorDetail      // Full detail: "[1003-01] No internet connection"
 | `1002` | `INVALID_CONFIG` | Invalid configuration |
 | `1003` | `NETWORK_ERROR` | Network error |
 | `1004` | `BRIDGE_ERROR` | Communication error with the app |
-| `1005` | `TIMEOUT` | Request timed out |
+| `1005` | `TIMEOUT` | The SDK did not finish loading in time |
 | `1006` | `CAMERA_PERMISSION` | Camera permission error |
 
 ### Network Error Subcodes (1003)
@@ -763,6 +513,7 @@ error.errorDetail      // Full detail: "[1003-01] No internet connection"
 | `04` | `CANNOT_CONNECT` | Unable to connect to server |
 | `05` | `CONNECTION_LOST` | Connection lost |
 | `06` | `UNKNOWN` | Unknown network error |
+| `SSL` | `SSL_ERROR` | SSL certificate error — the connection was cancelled |
 
 ### Bridge Error Subcodes (1004)
 
@@ -923,15 +674,16 @@ val configuration = AstroConfiguration.builder()
     .build()
 ```
 
-> **Native KYC:** The native identity verification flow (available with the **`com.astropay:connect-native-kyc`** artifact) also honors your `AstroConfiguration`. Your `style` / `styleOverrides` colors theme its screens — background, primary/brand color, on-screen text, and borders all follow your configured palette — and `theme` (`LIGHT` / `DARK` / `SYSTEM`) sets light or dark mode. The native KYC screens render in the **device language**, not the SDK's `language` config — unlike the web flow, where `language` applies. An integration that sets no colors is unchanged.
+> **Native KYC:** The native identity verification flow (available with the **`com.astropay:connect-native-kyc`** artifact) also honors your `AstroConfiguration`. Your `style` / `styleOverrides` colors theme its screens — background, primary/brand color, on-screen text, and borders all follow your configured palette — and `theme` (`LIGHT` / `DARK` / `SYSTEM`) sets light or dark mode. The native KYC screens render in the **device language**, not the SDK's `language` config — unlike the rest of the SDK, where `language` applies. An integration that sets no colors is unchanged.
 
 ## Co-Branded Header Logo
 
 When `showHeaderLogo` is `true` (the default), the SDK header displays a co-branded logo for the issuer. The logo is fetched automatically based on the `appIssuer` value and the current theme.
 
-- The SDK looks for a logo at: `{baseUrl}/{appIssuer}_{theme}.webp`
+- The SDK looks for a logo at: `{baseUrl}/{appIssuer}_{theme}.webp`, with `appIssuer` in lowercase
 - If the issuer logo is not found, it falls back to the default AstroPay logo
-- Set `showHeaderLogo` to `false` to hide the logo entirely
+- Set `showHeaderLogo` to `false` to hide the logo entirely. Passing `null` explicitly hides it too — only `true` shows the logo
+- The logo is part of the header, so it is never shown when `showHeader` is `false`
 
 ## Custom Header
 
@@ -1027,6 +779,8 @@ AstroConnectView(
 - [Changelog](CHANGELOG.md) — Version history and what changed in each release.
 - [Events Reference](EVENTS.md) — All analytics events emitted by the SDK, including screen names, event names, categories, and properties.
 - [Style Tokens Reference](STYLE-TOKENS.md) — Full catalog of design tokens accepted by `AstroStyle` (surface, text, border, buttons), plus cascade rules.
+- [Banners](BANNERS.md) — How to show banners inside the SDK: placements, parameters, link targets, dismissal and blocking.
+- [Flow Parameters](FLOW-PARAMETERS.md) — Optional `flowParams` values: topup presets, onboarding prefill and login phone prefill.
 - [Migration Guides](migrations/) — Step-by-step guides for upgrading between versions that include breaking changes.
 
 ## Support

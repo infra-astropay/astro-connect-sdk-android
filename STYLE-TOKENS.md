@@ -62,9 +62,9 @@ val brand2 = ContextCompat.getColor(context, R.color.brand_primary)
 val red2   = 0xFFFF0000.toInt()
 ```
 
-Alpha is honored. `0x80FF0000` (50%-opacity red) round-trips on the wire as `#FF000080` — fully opaque colors keep emitting 6-digit `#RRGGBB`, partially transparent colors emit 8-digit `#RRGGBBAA`.
+Alpha is honored. `0x80FF0000` (50%-opacity red) is equivalent to the hex string `#FF000080`: in the SDK's hex format alpha comes last — `#RRGGBB` for fully opaque colors, `#RRGGBBAA` for partially transparent ones.
 
-> The typed `AstroStyle` API exposes color fields as `@ColorInt Int`. The escape-hatch `styleOverrides` map still uses hex strings (`"#RRGGBB"` or `"#RRGGBBAA"`) because it is a free-form passthrough — see [Free-form overrides via `styleOverrides`](#free-form-overrides-via-styleoverrides).
+> The typed `AstroStyle` API exposes color fields as `@ColorInt Int`. The escape-hatch `styleOverrides` map also accepts hex strings (`"#RRGGBB"` or `"#RRGGBBAA"`) — see [Free-form overrides via `styleOverrides`](#free-form-overrides-via-styleoverrides).
 
 ## Token reference
 
@@ -669,7 +669,7 @@ Global typography settings. Exposes a single field — `fontFamily` — used as 
 
 | Field        | Type      | Description |
 |--------------|-----------|-------------|
-| `fontFamily` | `String?` | Optional global default font family applied to every text token rendered by the SDK. When omitted, the SDK's static default is used. The partner is responsible for ensuring the requested family is registered in the host app and resolvable when the SDK renders; the SDK does not load fonts on your behalf. `fontFamily` is not validated — any non-null string is forwarded as-is; an empty string is dropped. |
+| `fontFamily` | `String?` | Optional global default font family applied to every text token rendered by the SDK. When omitted, the SDK's static default is used. The partner is responsible for ensuring the requested family is registered in the host app and resolvable when the SDK renders; the SDK does not load fonts on your behalf. `fontFamily` is not validated — any non-null string is used as-is; an empty string is dropped. |
 
 ### `AstroFontStyle`
 
@@ -683,7 +683,7 @@ Leaf type used by per-component typography slots (`button.typography.label`, `in
 | `letterSpacing` | `Float?`  | Any number (px). May be negative for tighter tracking.           |
 | `fontFamily`    | `String?` | Any non-null string accepted (no validation); an empty string is dropped. Applied to the specific component slot. The partner is responsible for ensuring the requested family is registered in the host app and resolvable when the SDK renders; the SDK does not load fonts on your behalf. |
 
-Invalid values (negative `fontSize`/`lineHeight`, `fontWeight` outside `100..900`) cause the typed `AstroStyle.validate()` to throw. `fontFamily` is not validated — any non-null string is forwarded as-is.
+Invalid values (negative `fontSize`/`lineHeight`, `fontWeight` outside `100..900`) cause the typed `AstroStyle.validate()` to throw. `fontFamily` is not validated — any non-null string is used as-is.
 
 ## Example
 
@@ -792,13 +792,13 @@ mapOf("colors" to mapOf("buttonIconPrimaryIconColor" to "#00DBBF"))
 
 ### Accepted value forms
 
-- Top-level colors (e.g. `"surfaceBase"`, `"primaryColor"`). Color leaves accept **either** a hex string — 6-digit `"#RRGGBB"` or 8-digit `"#RRGGBBAA"` for alpha, leading `#` optional — **or** an `androidx.compose.ui.graphics.Color` value. Both forms are normalized to the same hex wire representation, so mixing them within the same map is fine. Any malformed hex string causes `AstroConfiguration.validate()` to throw, so invalid hex is caught at configuration time rather than silently dropped at runtime; `Color` leaves are always considered valid. A raw `Int` is **not** accepted as a color value — in a `Map<String, Any>` it is indistinguishable from any other numeric value; wrap it with `Color(intValue)` (or use a hex string) to pass a literal color.
+- Top-level colors (e.g. `"surfaceBase"`, `"primaryColor"`). Color leaves accept a hex string — 6-digit `"#RRGGBB"` or 8-digit `"#RRGGBBAA"` for alpha, leading `#` optional — an `androidx.compose.ui.graphics.Color` value, or a raw `@ColorInt Int` (for example the result of `android.graphics.Color.parseColor(...)`). All forms are normalized to the same hex representation, so mixing them within the same map is fine. Any malformed hex string causes `AstroConfiguration.validate()` to throw, so invalid hex is caught at configuration time rather than silently dropped at runtime; `Color` and `Int` leaves are always considered valid. Because a `Map<String, Any>` cannot tell a color from any other number, a raw `Int` is read as a color under **every** key except the typography numeric keys (`fontSize`, `lineHeight`, `letterSpacing`, `fontWeight`) — pass any other non-color number as a string. Only `Int` is treated this way: a `Long` literal such as `0xFF041311` must be converted with `.toInt()`.
 - The `typography` map, which accepts a single top-level `fontFamily` string — the global default font family, with the same semantics as the typed [`AstroTypography.fontFamily`](#astrotypography). Per-token nested keys (e.g. `typography.base500.fontFamily`, `typography.displayLarge.fontSize`) are **not** honored — they are silently ignored for forward compatibility, so partners migrating away from per-token overrides won't see validation errors but the values won't take effect either.
 - Per-component typography under the component slot (e.g. `button.typography.label.fontSize`, `input.typography.placeholder.fontSize`) — fully supported.
 
 Numeric values for `fontSize`, `lineHeight`, and `letterSpacing` are automatically normalized — you can pass either a number (e.g. `14`) or a string (e.g. `"14px"`); both work. Normalization recurses into nested maps, so numbers inside `button.typography.label`, `input.typography.helper`, and any other per-component typography map are normalized the same way. `fontWeight` is the only typography field that is **not** normalized to a `"<n>px"` string — it stays an integer in the range `100..900` because it is a unitless weight.
 
-> The typed `AstroStyle` API uses `@ColorInt Int` for color fields; the free-form `styleOverrides` map accepts **both** hex strings and `androidx.compose.ui.graphics.Color` values for color leaves. Internally both are converted to the same hex wire representation.
+> The typed `AstroStyle` API uses `@ColorInt Int` for color fields; the free-form `styleOverrides` map accepts hex strings, `androidx.compose.ui.graphics.Color` values and raw `@ColorInt Int` values for color leaves. Internally all of them are converted to the same hex representation.
 
 ```kotlin
 // Form 1 — hex string
@@ -807,7 +807,7 @@ mapOf(
     "primaryColor" to "#0033CC80",
 )
 
-// Form 2 — Compose Color (equivalent on the wire)
+// Form 2 — Compose Color (equivalent result)
 mapOf(
     "surfaceBase" to Color.White,
     "primaryColor" to Color(0x800033CC),
@@ -882,7 +882,7 @@ All the keys in the Primary row feed the loading spinner. The highlight cascade,
 
 The specific surface token wins over the brand-level field when both are set — for example, `style.surface.base` overrides `style.backgroundColor` for the initial loading screen, mirroring the typed cascade semantics used elsewhere in the SDK. Free-form `styleOverrides` apply after the typed `style` cascade and the specific token wins over the brand-level field.
 
-**Accepted value forms (brand color slots only):** `androidx.compose.ui.graphics.Color`, hex string (`#RRGGBB` / `#RRGGBBAA`, leading `#` optional), **or** a raw `@ColorInt Int`. Raw `Int` is accepted only for these brand color slots because the slot is by definition a color — there is no ambiguity. The free-form `styleOverrides` validation path for non-brand keys still rejects raw `Int` (wrap with `Color(intValue)` or use a hex string).
+**Accepted value forms:** the same as every other color key — `androidx.compose.ui.graphics.Color`, hex string (`#RRGGBB` / `#RRGGBBAA`, leading `#` optional), or a raw `@ColorInt Int`.
 
 ```kotlin
 // Hex string form
@@ -898,13 +898,13 @@ val configuration = AstroConfiguration.builder()
     ))
     .build()
 
-// Compose Color form (equivalent on the wire)
+// Compose Color form (equivalent result)
 mapOf(
     "backgroundColor" to Color(0xFF041311),
     "primaryColor" to Color(0xFF00DBBF),
 )
 
-// Raw @ColorInt Int form — accepted only for these brand color slots
+// Raw @ColorInt Int form
 mapOf(
     "backgroundColor" to 0xFF041311.toInt(),
     "primaryColor" to 0xFF00DBBF.toInt(),
@@ -930,7 +930,7 @@ The keys are case-sensitive camelCase — no aliases. Unlike the brand colors ab
 2. Typed `AstroStyle.header.backgroundColor` / `AstroStyle.header.borderColor`.
 3. Default theme color.
 
-**Accepted value forms:** a hex string (`#RRGGBB` / `#RRGGBBAA`, leading `#` optional) **or** an `androidx.compose.ui.graphics.Color` value. A malformed hex string causes `AstroConfiguration.validate()` to throw. The sibling layout keys under `header` (`borderWidth`, `paddingHorizontal`, `paddingVertical`) are not consumed from `styleOverrides` — set those on the typed `AstroStyle.header` instead.
+**Accepted value forms:** a hex string (`#RRGGBB` / `#RRGGBBAA`, leading `#` optional), an `androidx.compose.ui.graphics.Color` value, or a raw `@ColorInt Int`. A malformed hex string causes `AstroConfiguration.validate()` to throw. The sibling layout keys under `header` (`borderWidth`, `paddingHorizontal`, `paddingVertical`) are not consumed from `styleOverrides` — set those on the typed `AstroStyle.header` instead.
 
 ```kotlin
 // Hex string form
@@ -941,7 +941,7 @@ mapOf(
     ),
 )
 
-// Compose Color form (equivalent on the wire)
+// Compose Color form (equivalent result)
 mapOf(
     "header" to mapOf(
         "backgroundColor" to Color.White,
@@ -950,4 +950,4 @@ mapOf(
 )
 ```
 
-> If a header color is present under `styleOverrides["header"]`, it is used for the native header even when the typed `AstroStyle.header.backgroundColor` / `borderColor` is also set — `styleOverrides` wins. The typed field is used only when no `styleOverrides` header key is present.
+> If a header color is present under `styleOverrides["header"]`, it is used for the header bar even when the typed `AstroStyle.header.backgroundColor` / `borderColor` is also set — `styleOverrides` wins. The typed field is used only when no `styleOverrides` header key is present.
